@@ -11,6 +11,10 @@ type BlockRow = {
 };
 
 export async function GET(request: Request) {
+  // The current pilot stores authentication/profile state in Supabase. The
+  // legacy safety tables are optional, so an unavailable legacy store should
+  // not prevent a verified student from opening their profile.
+  if (!env.DB?.prepare) return campusJson({ blocks: [] });
   const user = await requireCampusUser(request);
   if (user instanceof Response) return user;
   const result = await env.DB.prepare(
