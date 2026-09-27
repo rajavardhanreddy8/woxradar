@@ -17,3 +17,5 @@ npm run dev
 ```
 
 Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` for authentication.
+
+Production deployment is managed through Vercel.
