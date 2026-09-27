@@ -1,0 +1,63 @@
+export type StudentQuestion = {
+  id: string;
+  section: number;
+  title: string;
+  options: string[];
+  max: number;
+  text: boolean;
+  core: boolean;
+  customText?: boolean;
+};
+
+const q = (
+  id: string,
+  section: number,
+  title: string,
+  options: string[],
+  max: number,
+  core: boolean,
+  text = false,
+  customText = false,
+): StudentQuestion => ({ id, section, title, options, max, text, core, customText });
+
+export const studentQuestions: StudentQuestion[] = [
+  q("5", 0, "Which age group are you in?", ["Under 18", "18–20", "21–23", "24–26", "27 or older", "Prefer not to say"], 1, true),
+  q("6", 0, "Which languages can a conversation comfortably switch into?", ["Telugu", "Hindi", "English", "Kannada", "Marathi", "Tamil", "Malayalam", "Odia", "Bengali", "Punjabi", "Gujarati", "Urdu", "Other"], 12, true),
+  q("7", 0, "Where feels like home to you?", ["Telangana", "Andhra Pradesh", "Karnataka", "Maharashtra", "Uttar Pradesh", "Odisha", "Tamil Nadu", "Kerala", "Punjab", "Other Indian state", "Outside India", "More than one place", "Prefer not to say"], 1, true),
+  q("51", 0, "How do you describe your gender?", ["Male", "Female", "Prefer not to say", "Describe in your own words"], 1, true, false, true),
+
+  q("11", 1, "What kind of movies or shows pull you in?", ["Comedy", "Thriller/mystery", "Action", "Romance", "Horror", "Sci-fi/fantasy", "Drama", "Crime", "Animation", "Feel-good", "Documentary", "Musical", "K-drama/anime"], 4, true),
+  q("10", 1, "Which film or show worlds do you keep coming back to?", ["Telugu", "Hindi/Bollywood", "Hollywood", "Kannada", "Tamil", "Malayalam", "Marathi", "Other Indian", "Korean", "Japanese/anime", "Other international", "Any language"], 4, true),
+  q("12", 1, "Something you'd happily talk about right now—a movie, show, or game.", [], 3, true, true),
+  q("16", 1, "What's your kind of watch plan?", ["Watch alone, discuss later", "With one friend", "Small group", "Cinema outing", "Online watch-together", "No preference"], 2, true),
+  q("17", 1, "What usually ends up in your playlist?", ["Telugu songs", "Hindi songs", "Other Indian film songs", "English pop", "K-pop", "Indian indie", "International indie", "Hip-hop/rap", "Rock/metal", "EDM", "Classical", "Folk", "Devotional", "Lo-fi", "Mix of everything", "Don't listen much"], 5, true),
+  q("25", 1, "What kind of game session sounds good?", ["Mobile games", "Multiplayer", "Competitive games", "Story games", "Sports/racing", "Strategy/puzzle", "Board/card games", "Watching gaming streams", "Want to try gaming", "Not my thing"], 3, true),
+  q("28", 1, "What's your kind of sports connection?", ["Watch cricket", "Play cricket", "Watch football", "Play football", "Badminton/table tennis", "Basketball/volleyball", "Other sports", "Esports", "Join when friends play", "Not my thing"], 3, true),
+
+  q("29", 2, "What would make WoxRadar worth opening?", ["A reason to say hi", "Friends outside class", "Someone to hang out with", "Movie/music/meme conversation", "Join a plan", "Comfortable small group", "Study/project buddy", "Just exploring"], 2, true),
+  q("31", 2, "Apart from entertainment, what do you enjoy doing?", ["Food places", "Walking/exploring", "Sports/fitness", "Photography", "Art/design", "Dance", "Singing/instruments", "Reading/writing", "Cooking", "Coding/making", "Events", "Volunteering", "Fashion", "Talking/hanging out", "Resting", "Still figuring it out"], 5, true),
+  q("34", 2, "Which words describe your vibe?", ["Quiet", "Chatty", "Playful", "Laid-back", "Curious", "Thoughtful", "Spontaneous", "Practical", "Creative", "Helpful", "Direct", "Ambitious", "Depends on company"], 5, true),
+  q("35", 2, "What kind of company sounds good?", ["One person to know", "Small familiar group", "Shared-interest group", "Different people for activities", "Online chat first", "Not sure"], 2, true),
+
+  q("43", 3, "What makes a first message easier to answer?", ["Specific shared-interest question", "Meme/recommendation with context", "Clear small-plan invitation", "Simple hello", "Shared group introduction", "Short no-pressure message", "Depends on person"], 2, true),
+  q("52", 3, "When getting to know someone new, what's your comfortable starting point?", ["Comfortable meeting one-on-one", "Prefer a group first", "Prefer texting before meeting", "Depends on the person", "Still figuring it out"], 1, true),
+
+  q("18", 1, "Which era sounds most like your playlist?", ["New releases", "2010s", "2000s", "1990s", "Older classics", "Mix across decades", "Don't think about eras"], 2, false),
+  q("19", 1, "What song or artist have you had on repeat?", [], 3, false, true),
+  q("21", 1, "What has been taking over your feed lately?", ["Comedy/memes", "Movie clips", "Music/dance", "Bike/car edits", "Cricket/sports", "Gaming", "Food", "Fashion", "Travel", "Fitness", "Tech/science", "Art/photography", "Animals", "News", "Creator vlogs", "Mixed feed", "Don't use feeds"], 5, false),
+  q("23", 1, "What kind of longer videos keep you watching?", ["Comedy", "Vlogs", "Gaming", "Film analysis", "Tech/gadgets", "Bike/car reviews", "Travel/food", "Sports analysis", "Learning", "Interviews/podcasts", "Documentaries", "Mostly short videos"], 3, false),
+  q("24", 1, "Is there a creator or channel you'd recommend?", [], 3, false, true),
+  q("26", 1, "What are you playing lately?", [], 3, false, true),
+  q("27", 1, "Bikes and cars: what pulls you in?", ["Design", "Engineering", "Edits", "Reviews/comparisons", "Motorsport", "Planned rides", "Learning more", "Mostly watching", "Not my thing"], 3, false),
+
+  q("36", 2, "Who should you be matched with?", ["Across Woxsen", "Prefer my school, open to others", "My school only", "Not decided"], 1, false),
+  q("37", 2, "Which introduction would you be curious to receive?", ["Same interests", "Different hobby", "Another school/year", "Existing circle", "Mutual connection", "No preference", "No introductions now"], 2, false),
+  q("38", 2, "When are you usually up for a plan?", ["Weekday daytime", "Weekday evening", "Weekend daytime", "Weekend evening", "Online chats", "Schedule changes", "Not making plans now"], 7, false),
+  q("39", 2, "What pace of staying in touch feels comfortable?", ["A little most days", "Few times a week", "Mostly when planning", "Occasional messages", "Depends on person"], 1, false),
+
+  q("41", 3, "When joining a group where you know nobody, what helps?", ["Someone starts talking", "Shared activity", "Small group", "Listen first", "Familiar topic", "Usually settle easily", "Depends on day"], 2, false),
+  q("45", 3, "When a friend's had a rough day, what do you usually do first?", ["Listen", "Ask what they need", "Offer distraction", "Suggest something practical", "Give space, check later", "Depends on closeness"], 2, false),
+  q("46", 3, "You disagree about a movie, game, or plan—what feels natural?", ["Compare reasons", "Keep it playful", "Agree to disagree", "Change topic", "Take a moment", "Depends on topic"], 2, false),
+  q("47", 3, "When plans change last-minute, what helps?", ["Tell me early", "Suggest another plan", "Keep it flexible", "Let me decide", "Reschedule", "Depends on plan"], 2, false),
+  q("56", 3, "What should someone respect while getting to know you?", ["Time to reply", "Ask before calling", "Text before meeting", "Public first meetings", "Don't pressure personal details", "Let me decline", "Keep it friendly unless mutually changed"], 7, false),
+];
