@@ -2,7 +2,11 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function proxy(request: NextRequest) {
-  let response = NextResponse.next({ request });
+  // These were supplied by the old hosting platform. Never trust copies sent
+  // by a browser; only this proxy may populate them after checking Supabase.
+  const headers = new Headers(request.headers);
+  for (const name of ["oai-authenticated-user-id", "oai-authenticated-user-email", "oai-authenticated-user-full-name", "oai-authenticated-user-full-name-encoding"]) headers.delete(name);
+  let response = NextResponse.next({ request: { headers } });
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
@@ -13,22 +17,23 @@ export async function proxy(request: NextRequest) {
       getAll: () => request.cookies.getAll(),
       setAll(cookiesToSet) {
         cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-        response = NextResponse.next({ request });
+        headers.set("cookie", request.headers.get("cookie") ?? "");
+        response = NextResponse.next({ request: { headers } });
         cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
       },
     },
   });
 
-  const { data } = await supabase.auth.getClaims();
-  const claims = data?.claims;
-  if (!claims?.sub || typeof claims.email !== "string") return response;
+  // getUser checks the current Auth record, including email confirmation,
+  // instead of trusting mutable JWT metadata or a client-provided header.
+  const { data, error } = await supabase.auth.getUser();
+  const user = data?.user;
+  const email = user?.email?.toLowerCase() ?? "";
+  if (error || !user || !email.endsWith("@woxsen.edu.in") || !user.email_confirmed_at) return response;
 
-  const headers = new Headers(request.headers);
-  headers.set("oai-authenticated-user-id", String(claims.sub));
-  headers.set("oai-authenticated-user-email", claims.email);
-  const fullName = typeof claims.user_metadata === "object" && claims.user_metadata && "full_name" in claims.user_metadata
-    ? String(claims.user_metadata.full_name ?? "")
-    : "";
+  headers.set("oai-authenticated-user-id", user.id);
+  headers.set("oai-authenticated-user-email", email);
+  const fullName = typeof user.user_metadata?.full_name === "string" ? user.user_metadata.full_name.slice(0, 70) : "";
   if (fullName) {
     headers.set("oai-authenticated-user-full-name", encodeURIComponent(fullName));
     headers.set("oai-authenticated-user-full-name-encoding", "percent-encoded-utf-8");
