@@ -1,0 +1,51 @@
+import { campusJson } from "../../lib/college-access";
+import { env } from "@/lib/runtime-env";
+import { requireCampusUser } from "../../lib/college-access";
+async function connection(id, userId) {
+    return env.DB.prepare(`SELECT r.id FROM requests r WHERE r.id=? AND r.state='accepted' AND(r.sender_user_id=? OR r.recipient_user_id=?)
+ AND NOT EXISTS(SELECT 1 FROM user_blocks b WHERE(b.blocker_user_id=r.sender_user_id AND b.blocked_user_id=r.recipient_user_id)OR(b.blocker_user_id=r.recipient_user_id AND b.blocked_user_id=r.sender_user_id))
+ AND NOT EXISTS(SELECT 1 FROM campus_suspensions s WHERE s.user_id IN(r.sender_user_id,r.recipient_user_id))`).bind(id, userId, userId).first();
+}
+export async function GET(request) { const u = await requireCampusUser(request); if (u instanceof Response)
+    return u; const id = new URL(request.url).searchParams.get("requestId") ?? ""; try {
+    if (!await connection(id, u.userId))
+        return campusJson({ error: "This accepted conversation is unavailable." }, { status: 403 });
+    const rows = await env.DB.prepare("SELECT id,sender_user_id AS senderUserId,body,created_at AS createdAt FROM connection_messages WHERE request_id=? ORDER BY created_at DESC,id DESC LIMIT 100").bind(id).all();
+    return campusJson({ messages: (rows.results ?? []).reverse(), viewerUserId: u.userId }, { headers: { "Cache-Control": "no-store" } });
+}
+catch {
+    return campusJson({ error: "Could not load messages. Retry." }, { status: 503 });
+} }
+export async function POST(request) {
+    const u = await requireCampusUser(request);
+    if (u instanceof Response)
+        return u;
+    let d;
+    try {
+        const raw = await request.text();
+        if (raw.length > 2400)
+            return campusJson({ error: "Message too large." }, { status: 413 });
+        d = JSON.parse(raw);
+    }
+    catch {
+        return campusJson({ error: "Send a valid message." }, { status: 400 });
+    }
+    const id = typeof d.requestId === "string" ? d.requestId : "", body = typeof d.body === "string" ? d.body.trim() : "";
+    if (!body || body.length > 800)
+        return campusJson({ error: "Write a message of up to 800 characters." }, { status: 400 });
+    try {
+        if (!await connection(id, u.userId))
+            return campusJson({ error: "Accept an introduction before chatting." }, { status: 403 });
+        const messageId = crypto.randomUUID(), now = Date.now();
+        const saved = await env.DB.prepare(`INSERT INTO connection_messages(id,request_id,sender_user_id,body,created_at) SELECT ?,r.id,?,?,? FROM requests r WHERE r.id=? AND r.state='accepted' AND(r.sender_user_id=? OR r.recipient_user_id=?)
+ AND NOT EXISTS(SELECT 1 FROM user_blocks b WHERE(b.blocker_user_id=r.sender_user_id AND b.blocked_user_id=r.recipient_user_id)OR(b.blocker_user_id=r.recipient_user_id AND b.blocked_user_id=r.sender_user_id))
+ AND NOT EXISTS(SELECT 1 FROM campus_suspensions s WHERE s.user_id IN(r.sender_user_id,r.recipient_user_id))
+ AND(SELECT COUNT(*) FROM connection_messages m WHERE m.sender_user_id=? AND m.created_at>?)<30`).bind(messageId, u.userId, body, now, id, u.userId, u.userId, u.userId, now - 60000).run();
+        if (!saved.meta.changes)
+            return campusJson({ error: "Conversation changed or message limit reached. Retry later." }, { status: 409 });
+        return campusJson({ message: { id: messageId, senderUserId: u.userId, body, createdAt: now } }, { status: 201 });
+    }
+    catch {
+        return campusJson({ error: "Could not send. Your message is still here." }, { status: 503 });
+    }
+}
