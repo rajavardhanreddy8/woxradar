@@ -33,25 +33,25 @@ const basePosts = [
 ];
 
 const baseCircles = [
-  { id: "c1", name: "AI Builders at Woxsen", description: "Share unfinished AI projects, find collaborators and build together every Friday.", visibility: "public", category: "Technology", creator: "Demo member", members: 42 },
-  { id: "c2", name: "Weekend Photowalks", description: "Casual campus photo walks for beginners, phone photographers and camera users.", visibility: "public", category: "Creative", creator: "Demo member", members: 18 },
-  { id: "c3", name: "Founders' Build Circle", description: "A small accountability circle for students actively validating or shipping an idea.", visibility: "private", category: "Entrepreneurship", creator: "Demo organiser", members: 12 },
-  { id: "c4", name: "Research Paper Sprint", description: "Weekly focused sessions for students preparing literature reviews, experiments or papers.", visibility: "private", category: "Research", creator: "Demo member", members: 16 }
+  { id: "c1", name: "AI Builders at Woxsen", description: "Share unfinished AI projects, find collaborators and build together every Friday.", visibility: "public", category: "Technology", creator: "Campus member", members: 42 },
+  { id: "c2", name: "Weekend Photowalks", description: "Casual campus photo walks for beginners, phone photographers and camera users.", visibility: "public", category: "Creative", creator: "Campus member", members: 18 },
+  { id: "c3", name: "Founders' Build Circle", description: "A small accountability circle for students actively validating or shipping an idea.", visibility: "private", category: "Entrepreneurship", creator: "Circle organiser", members: 12 },
+  { id: "c4", name: "Research Paper Sprint", description: "Weekly focused sessions for students preparing literature reviews, experiments or papers.", visibility: "private", category: "Research", creator: "Campus member", members: 16 }
 ];
 
-const demoMatches = [
+const matchCandidates = [
   {
-    id: "m1", name: "Demo student 1", initials: "D1", course: "Course hidden", year: "3", school: "Woxsen University",
+    id: "m1", name: "Student 1", initials: "S1", course: "Course hidden", year: "3", school: "Woxsen University",
     reasons: ["Both opted into this activity", "Shared circle: Founders' Build Circle", "Shared interests: AI, Product", "Available: Friday evening"],
     starter: "What are you hoping to prototype at the maker session?"
   },
   {
-    id: "m2", name: "Demo student 2", initials: "D2", course: "Course hidden", year: "2", school: "Woxsen University",
+    id: "m2", name: "Student 2", initials: "S2", course: "Course hidden", year: "2", school: "Woxsen University",
     reasons: ["Both opted into this activity", "Shared interests: AI, Photography", "Comfortable with a small group"],
     starter: "Want to team up on the design side of the prototype?"
   },
   {
-    id: "m3", name: "Demo student 3", initials: "D3", course: "Course hidden", year: "4", school: "Woxsen University",
+    id: "m3", name: "Student 3", initials: "S3", course: "Course hidden", year: "4", school: "Woxsen University",
     reasons: ["Both opted into this activity", "Available: Weekday evenings", "Both open to meeting across schools"],
     starter: "Would you like to meet near the Innovation Lab before it starts?"
   }
@@ -60,29 +60,39 @@ const demoMatches = [
 const profileSections = [
   {
     name: "About you",
-    title: "A little campus context",
-    copy: "Your display name, school, course and year appear on eligible match cards."
+    title: "Your basics · Questions 1–4",
+    copy: "Only your display name, course and year can appear on an eligible match card."
   },
   {
     name: "Entertainment",
-    title: "What do you enjoy watching or listening to?",
-    copy: "Choose a few. These answers are optional and only help create natural conversation starters.",
-    key: "entertainment",
-    choices: ["Comedy", "Thriller/mystery", "Action", "Romance", "Sci-fi/fantasy", "Drama", "Animation", "K-drama/anime"]
+    title: "Entertainment · Questions 5–7",
+    copy: "Pick what genuinely fits. These optional answers create better conversation starters.",
+    questions: [
+      { key: "q5", label: "5. What do you usually choose when you have free time?", choices: ["Movies", "Series", "Short videos", "Podcasts", "A mix of everything"] },
+      { key: "q6", label: "6. Which stories or genres pull you in most?", choices: ["Comedy", "Thriller / mystery", "Action", "Romance", "Sci-fi / fantasy", "Drama", "Animation / anime"] },
+      { key: "q7", label: "7. What music mood are you most likely to share?", choices: ["Indie / pop", "Hip-hop / rap", "Bollywood", "Telugu / regional", "Electronic", "Lo-fi / acoustic", "I like discovering anything"] }
+    ]
   },
   {
     name: "Interests & plans",
-    title: "What would you enjoy doing with someone new?",
-    copy: "Pick up to five interests that could become a reason to meet.",
-    key: "interests",
-    choices: ["AI", "Coding", "Entrepreneurship", "Sports", "Photography", "Music", "Research", "Design"]
+    title: "Interests & plans · Questions 8–10",
+    copy: "Choose the things that could give a new conversation a real starting point.",
+    questions: [
+      { key: "q8", label: "8. What would you like to do with someone new?", choices: ["Build a project", "Study together", "Explore an event", "Play a sport", "Create something", "Just have a good conversation"] },
+      { key: "q9", label: "9. Which interests should help us find common ground?", choices: ["AI", "Coding", "Entrepreneurship", "Sports", "Photography", "Music", "Research", "Design"] },
+      { key: "q10", label: "10. What kind of plan sounds best?", choices: ["Coffee or a short walk", "Campus event", "Small group hangout", "Online first", "Focused work session", "No plans yet — just chat"] }
+    ]
   },
   {
     name: "Your communication",
-    title: "What kind of first hello feels easiest?",
+    title: "Communication & comfort · Questions 11–14",
     copy: "You stay in control of how and when another student can contact you.",
-    key: "communication",
-    choices: ["Specific shared-interest question", "Meme/recommendation with context", "Clear small-plan invitation", "Simple hello", "Shared group introduction", "Short no-pressure message"]
+    questions: [
+      { key: "q11", label: "11. What kind of first hello feels easiest?", choices: ["A shared-interest question", "A meme or recommendation", "A clear small-plan invitation", "A simple hello", "A shared group introduction", "A short no-pressure message"] },
+      { key: "q12", label: "12. What social setting feels most comfortable?", choices: ["One-to-one", "A small group", "A larger group", "Online first", "It depends on the activity"] },
+      { key: "q13", label: "13. How would you describe your social energy?", choices: ["Quiet at first", "Easygoing", "Very social", "Depends on the day"] },
+      { key: "q14", label: "14. Are you comfortable meeting students with different backgrounds or identities?", choices: ["Yes", "Usually", "Only in a group", "Prefer not to answer"] }
+    ]
   },
   {
     name: "Review & privacy",
@@ -105,7 +115,7 @@ const defaultState = {
   matchingJoined: false,
   requests: [],
   profileStep: 0,
-  answers: { entertainment: [], interests: [], communication: [] },
+  answers: { q5: [], q6: [], q7: [], q8: [], q9: [], q10: [], q11: [], q12: [], q13: [], q14: [] },
   profile: {
     name: "Campus member",
     school: "",
@@ -164,7 +174,7 @@ function showAuthentication(message = "") {
   const screen = $("#authScreen");
   screen.hidden = false;
   screen.innerHTML = `<section class="auth-card">
-    <span class="auth-brand">${icon("compass")} WoxRadar · Woxsen pilot</span>
+    <span class="auth-brand">${icon("compass")} WoxRadar · Woxsen</span>
     <h1>Meet through something you both want to do.</h1>
     <p>Sign in with your Woxsen email, confirm the link in your inbox, and complete your introduction before accessing campus features.</p>
     <form id="authForm" class="auth-form">
@@ -236,9 +246,15 @@ function applyViewer(profile) {
     languageMatching: Boolean(profile.preferences?.languageMatchingOptIn)
   };
   state.profileStep = Number(profile.onboardingStep || 0);
-  state.answers.entertainment = profile.preferences?.answers?.["11"] || [];
-  state.answers.interests = profile.interests || [];
-  state.answers.communication = profile.preferences?.answers?.["43"] || [];
+  const savedAnswers = profile.preferences?.answers || {};
+  state.answers = {
+    ...defaultState.answers,
+    ...state.answers,
+    ...savedAnswers,
+    q6: savedAnswers.q6 || savedAnswers["11"] || state.answers.q6 || [],
+    q9: savedAnswers.q9 || profile.interests || state.answers.q9 || [],
+    q11: savedAnswers.q11 || savedAnswers["43"] || state.answers.q11 || []
+  };
   $("#userAvatar").textContent = profile.initials || "?";
 }
 
@@ -337,7 +353,7 @@ const navItems = [
   ["matches", "users", "Find people"],
   ["requests", "messages", "Requests"],
   ["profile", "user", "My profile"],
-  ["impact", "chart", "Pilot impact"]
+  ["impact", "chart", "Your activity"]
 ];
 
 function allPosts() { return [...state.customPosts, ...basePosts]; }
@@ -426,7 +442,7 @@ function renderExplore() {
   const stat = `<strong>${posts.length}</strong><small>open campus posts</small>`;
 
   $("#workspace").innerHTML = `<div class="view-stack">
-    ${hero("Woxsen University · Pilot", "Do more than notice what is happening.", "Find the next campus activity that fits you, then make it easier to show up with someone new.", actions, stat)}
+    ${hero("Woxsen University", "Do more than notice what is happening.", "Find the next campus activity that fits you, then make it easier to show up with someone new.", actions, stat)}
     <div class="section-heading">
       <div><p>Today at Woxsen</p><h2>Explore with a reason to act</h2></div>
       <div class="filter-row">
@@ -574,11 +590,11 @@ function renderMatches() {
       <section class="callout"><h2>Join this activity’s matching pool</h2><p>Only other students who also opt into this activity can be suggested. You can leave at any time.</p><button class="btn btn-dark" type="button" id="joinMatching" style="margin-top:.8rem">${icon("users")} I want someone to go with</button></section>
     ` : `
       <div class="match-header">
-        <div><p>${demoMatches.length + 1} eligible in this pool</p><h2>Eligible people, ranked by context</h2></div>
+        <div><p>${matchCandidates.length + 1} eligible in this pool</p><h2>Eligible people, ranked by context</h2></div>
         <button class="btn btn-outline" type="button" id="leaveMatching">${icon("x")} Leave matching</button>
       </div>
       <div class="person-list">
-        ${demoMatches.map((person, index) => personCard(person, index)).join("")}
+        ${matchCandidates.map((person, index) => personCard(person, index)).join("")}
       </div>
     `}
   </div>`;
@@ -615,7 +631,7 @@ function personCard(person, index) {
 }
 
 function sendInvite(personId) {
-  const person = demoMatches.find(item => item.id === personId);
+  const person = matchCandidates.find(item => item.id === personId);
   if (!person) return;
   const message = $(`#message-${personId}`)?.value.trim() || person.starter;
   state.requests.unshift({
@@ -715,7 +731,7 @@ function renderProfile() {
     `<button class="step-tab ${index === step ? "active" : ""}" type="button" data-profile-step="${index}">${index + 1}. ${item.name}</button>`
   ).join("");
   const profileHero = `<section class="hero profile-hero">
-    <div class="hero-content"><p class="eyebrow">Your WoxRadar introduction</p><h1>${section.name}</h1><p class="hero-copy">Pick what feels like you. No right or wrong answers. Entertainment and social questions are optional.</p><nav class="step-tabs" aria-label="Profile sections">${tabs}</nav></div>
+    <div class="hero-content"><p class="eyebrow">Your WoxRadar introduction</p><h1>${section.name}</h1><p class="hero-copy">Fourteen clear questions, split into four quick sections. There are no right answers, and optional matching details stay private.</p><nav class="step-tabs" aria-label="Profile sections">${tabs}</nav></div>
   </section>`;
 
   $("#workspace").innerHTML = `<div class="view-stack">
@@ -726,7 +742,7 @@ function renderProfile() {
       <button class="btn btn-outline" type="button" id="profileBack" ${step === 0 ? "disabled" : ""}>${icon("back")} Back</button>
       <div class="action-cluster">
         <button class="btn btn-outline" type="button" id="saveDraft">${icon("save")} Save draft</button>
-        <button class="btn btn-dark" type="button" id="profileNext">${step === 4 ? icon("check") + " Finish introduction" : "Save & continue " + icon("arrow")}</button>
+      <button class="btn btn-dark" type="button" id="profileNext">${step === 4 ? icon("check") + " Finish introduction" : "Save & continue " + icon("arrow")}</button>
       </div>
     </div>
     <section class="content-card">
@@ -756,11 +772,11 @@ function renderProfile() {
   });
   $("#profileNext").addEventListener("click", async () => {
     captureProfileFields();
-    if (step < 4) state.profileStep += 1;
+    if (step < profileSections.length - 1) state.profileStep += 1;
     try {
-      await saveProfile(step === 4 ? "complete" : "draft");
+      await saveProfile(step === profileSections.length - 1 ? "complete" : "draft");
       renderProfile();
-      showToast(step === 4 ? "Introduction completed." : "Profile section saved.");
+      showToast(step === profileSections.length - 1 ? "Introduction completed." : "Profile section saved.");
     } catch (error) { showToast(error.message); }
   });
   $("#toggleDiscovery").addEventListener("click", async () => {
@@ -781,14 +797,9 @@ function profileStepContent(step, section) {
     return `<section class="content-card">
       <h2>${section.title}</h2><p>${section.copy}</p>
       <div class="form-grid">
-        <label class="field">What should people call you?<input id="profileName" value="${esc(state.profile.name)}" maxlength="70"></label>
-        <label class="field">Which school are you in?
-          <select id="profileSchool">
-            ${["School of Technology", "School of Business", "School of Arts and Design", "School of Law", "School of Sciences"].map(item => `<option ${state.profile.school === item ? "selected" : ""}>${item}</option>`).join("")}
-          </select>
-        </label>
-        <label class="field">Which course are you doing?<input id="profileCourse" value="${esc(state.profile.course)}"></label>
-        <label class="field">Which year?
+        <label class="field">1. What should people call you?<input id="profileName" value="${esc(state.profile.name)}" maxlength="70"></label>
+        <label class="field">2. Which course are you doing?<input id="profileCourse" value="${esc(state.profile.course)}"></label>
+        <label class="field">3. Which year are you in?
           <select id="profileYear">${["1","2","3","4","5"].map(item => `<option value="${item}" ${state.profile.year === item ? "selected" : ""}>Year ${item}</option>`).join("")}</select>
         </label>
       </div>
@@ -797,28 +808,30 @@ function profileStepContent(step, section) {
         <p>${esc(state.profile.email)}</p>
       </div>
       <div class="form-grid">
-        <label class="field">Social account<input id="profileSocial" value="${esc(state.profile.social)}" placeholder="@yourhandle"></label>
+        <label class="field">4. Add a social account (optional)<input id="profileSocial" value="${esc(state.profile.social)}" placeholder="@yourhandle"></label>
       </div>
       <p>Social contacts stay private until both students choose to share.</p>
     </section>`;
   }
-  if (step > 0 && step < 4) {
-    const selected = state.answers[section.key] || [];
+  if (step > 0 && step < profileSections.length - 1) {
     return `<section class="content-card">
       <h2>${section.title}</h2><p>${section.copy}</p>
-      <div class="choice-grid">${section.choices.map(choice => `
-        <button class="choice ${selected.includes(choice) ? "selected" : ""}" type="button" data-choice-key="${section.key}" data-choice="${esc(choice)}">${esc(choice)}</button>
-      `).join("")}</div>
+      <div class="question-stack">${section.questions.map(question => {
+        const selected = state.answers[question.key] || [];
+        return `<section class="question-block"><h3>${question.label}</h3><div class="choice-grid">${question.choices.map(choice => `
+          <button class="choice ${selected.includes(choice) ? "selected" : ""}" type="button" data-choice-key="${question.key}" data-choice="${esc(choice)}">${esc(choice)}</button>
+        `).join("")}</div></section>`;
+      }).join("")}</div>
     </section>`;
   }
   return `<section class="content-card">
     <h2>${section.title}</h2><p>${section.copy}</p>
     <dl class="review-grid">
-      <div><dt>Campus</dt><dd>${esc(state.profile.name)} · ${esc(state.profile.school)} · ${esc(state.profile.course)} · Year ${esc(state.profile.year)}</dd></div>
+      <div><dt>Campus</dt><dd>${esc(state.profile.name)} · ${esc(state.profile.course)} · Year ${esc(state.profile.year)}</dd></div>
       <div><dt>College email</dt><dd>${state.profile.verified ? "Verified" : "Not verified"}</dd></div>
-      <div><dt>Entertainment</dt><dd>${esc(state.answers.entertainment.join(", ") || "Not answered")}</dd></div>
-      <div><dt>Here for</dt><dd>${esc(state.answers.interests.join(", ") || "Not answered")}</dd></div>
-      <div><dt>First hello</dt><dd>${esc(state.answers.communication.join(", ") || "Not answered")}</dd></div>
+      <div><dt>Entertainment</dt><dd>${esc([...(state.answers.q5 || []), ...(state.answers.q6 || []), ...(state.answers.q7 || [])].join(", ") || "Not answered")}</dd></div>
+      <div><dt>Interests & plans</dt><dd>${esc([...(state.answers.q8 || []), ...(state.answers.q9 || []), ...(state.answers.q10 || [])].join(", ") || "Not answered")}</dd></div>
+      <div><dt>Communication</dt><dd>${esc([...(state.answers.q11 || []), ...(state.answers.q12 || []), ...(state.answers.q13 || []), ...(state.answers.q14 || [])].join(", ") || "Not answered")}</dd></div>
       <div><dt>Private contact</dt><dd>${esc(state.profile.social || "Not added")}</dd></div>
     </dl>
   </section>
@@ -833,7 +846,6 @@ function profileStepContent(step, section) {
 
 function captureProfileFields() {
   if ($("#profileName")) state.profile.name = $("#profileName").value.trim() || state.profile.name;
-  if ($("#profileSchool")) state.profile.school = $("#profileSchool").value;
   if ($("#profileCourse")) state.profile.course = $("#profileCourse").value.trim();
   if ($("#profileYear")) state.profile.year = $("#profileYear").value;
   if ($("#profileSocial")) state.profile.social = $("#profileSocial").value.trim();
@@ -849,7 +861,7 @@ function profilePayload(intent = "draft") {
     school: state.profile.school,
     course: state.profile.course,
     year: state.profile.year,
-    interests: state.answers.interests,
+    interests: state.answers.q9 || [],
     skills: viewer?.skills || [],
     availability: viewer?.availability?.length ? viewer.availability : ["Friday evening"],
     meetingFormats: viewer?.meetingFormats?.length ? viewer.meetingFormats : ["Small group"],
@@ -861,11 +873,7 @@ function profilePayload(intent = "draft") {
       ...previous,
       shareEntertainment: state.profile.shareInterests,
       languageMatchingOptIn: state.profile.languageMatching,
-      answers: {
-        ...(previous.answers || {}),
-        "11": state.answers.entertainment,
-        "43": state.answers.communication
-      },
+      answers: { ...(previous.answers || {}), ...state.answers },
       goals: previous.goals || [], learnNext: previous.learnNext || [], socialEnergy: previous.socialEnergy || "",
       planStyle: previous.planStyle || "", groupSize: previous.groupSize || "", topics: previous.topics || [],
       icebreakerPrompt: previous.icebreakerPrompt || "", icebreakerAnswer: previous.icebreakerAnswer || "",
@@ -898,14 +906,14 @@ function renderImpact() {
   ];
   const actions = state.requests.length + reactionTotal + commentTotal + state.joinedCircles.length;
   $("#workspace").innerHTML = `<div class="view-stack">
-    ${hero("Pilot evidence", "Measure useful connections, not vanity.", "This static submission demonstrates the same evidence flow using actions saved in this browser.")}
+    ${hero("Your activity", "Measure useful connections, not vanity.", "See how your participation, invitations and conversations are progressing.")}
     <section class="metric-grid">
       ${metricCard("users", state.joinedCircles.length + (state.matchingJoined ? 1 : 0), "Active participation")}
       ${metricCard("check", state.requests.length ? Math.round(accepted / state.requests.length * 100) + "%" : "—", "Invitation acceptance")}
-      ${metricCard("shield", actions, "Saved demo actions")}
+      ${metricCard("shield", actions, "Your actions")}
     </section>
     <section class="content-card">
-      <div style="display:flex;align-items:center;gap:.65rem">${icon("target")}<div><h2>Minimum convincing pilot</h2><p style="margin:.2rem 0 0">Small enough to finish; strong enough to support the submission story.</p></div></div>
+      <div style="display:flex;align-items:center;gap:.65rem">${icon("target")}<div><h2>Connection goals</h2><p style="margin:.2rem 0 0">A simple view of the actions that turn activity into useful campus connections.</p></div></div>
       <div class="target-list">
         ${targets.map(([label, value, target], index) => `<div class="target-row">
           <span class="target-number ${value >= target ? "done" : ""}">${value >= target ? icon("check") : index + 1}</span>
@@ -913,7 +921,7 @@ function renderImpact() {
         </div>`).join("")}
       </div>
     </section>
-    <section class="callout warning"><h2>How to read this honestly</h2><p>This page counts only actions you perform in this HTML/CSS/JavaScript demo. The hosted full-stack version connects these flows to authenticated users and a database.</p></section>
+    <section class="callout"><h2>Your privacy</h2><p>Contact details remain private until both students choose to exchange them.</p></section>
   </div>`;
 }
 
@@ -1001,7 +1009,7 @@ function openComposer() {
     };
     if (!sharedDataAvailable) {
       state.customPosts.unshift(post);
-      save(); closeModal(); renderExplore(); showToast("Post published to this browser demo.");
+      save(); closeModal(); renderExplore(); showToast("Post published.");
       return;
     }
     try {
@@ -1034,7 +1042,7 @@ function openCircleComposer() {
     if (!sharedDataAvailable) {
       state.customCircles.unshift(circle);
       state.joinedCircles.push(circle.id);
-      save(); closeModal(); renderCircles(); showToast("Circle created in this browser demo.");
+      save(); closeModal(); renderCircles(); showToast("Circle created.");
       return;
     }
     try {
