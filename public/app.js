@@ -1,9 +1,6 @@
-import { createBrowserClient } from "https://esm.sh/@supabase/ssr@0.7.0?bundle";
-
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 
-let supabase;
 let viewer;
 
 const STORAGE_KEY = "woxradar-codedex-v2";
@@ -147,6 +144,16 @@ async function request(url, options) {
   return data;
 }
 
+async function authRequest(payload) {
+  const response = await fetch("/api/auth", {
+    method: "POST",
+    cache: "no-store",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  return response.json().catch(() => ({ error: "Authentication request failed." }));
+}
+
 function showAuthentication(message = "") {
   $("#appShell").hidden = true;
   const screen = $("#authScreen");
@@ -184,11 +191,11 @@ async function authenticate(event) {
   const button = $("button[type=submit]", event.currentTarget);
   button.disabled = true;
   try {
-    const signedIn = await supabase.auth.signInWithPassword({ email, password });
-    if (!signedIn.error && signedIn.data.session) return window.location.assign("/?setup=1");
-    if (signedIn.error && !/invalid login credentials|email not confirmed/i.test(signedIn.error.message)) throw signedIn.error;
-    const result = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${location.origin}/auth/callback` } });
-    if (result.error) throw result.error;
+    const signedIn = await authRequest({ action: "signin", email, password });
+    if (signedIn.session) return window.location.assign("/?setup=1");
+    if (!/invalid login credentials|email not confirmed/i.test(signedIn.error || "")) throw new Error(signedIn.error || "Could not sign in.");
+    const result = await authRequest({ action: "signup", email, password });
+    if (result.error) throw new Error(result.error);
     authMessage("Check your Woxsen inbox and open the confirmation link before signing in.");
   } catch (error) {
     authMessage(error.message || "Could not sign in. Please try again.");
@@ -200,8 +207,12 @@ async function authenticate(event) {
 async function resendConfirmation() {
   const email = String(new FormData($("#authForm")).get("email") || "").trim().toLowerCase();
   if (!email.endsWith("@woxsen.edu.in")) return authMessage("Enter your Woxsen email first.");
-  const { error } = await supabase.auth.resend({ type: "signup", email, options: { emailRedirectTo: `${location.origin}/auth/callback` } });
-  authMessage(error ? error.message : "A fresh confirmation link was sent. Check spam too.");
+  try {
+    const result = await authRequest({ action: "resend", email });
+    authMessage(result.error || "A fresh confirmation link was sent. Check spam too.");
+  } catch (error) {
+    authMessage(error.message || "Could not send a confirmation link.");
+  }
 }
 
 function applyViewer(profile) {
@@ -228,8 +239,6 @@ function applyViewer(profile) {
 
 async function boot() {
   try {
-    const config = await request("/api/config");
-    supabase = createBrowserClient(config.url, config.key);
     const profileResult = await fetch("/api/profile", { cache: "no-store" });
     if (profileResult.status === 401) return showAuthentication();
     const data = await profileResult.json();
