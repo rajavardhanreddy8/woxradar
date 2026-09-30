@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import Link from "next/link";
 import { ArrowRight, Compass, ShieldCheck, UsersRound } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
@@ -41,10 +42,22 @@ export function SignInPanel() {
     try {
       const supabase = createSupabaseBrowserClient();
       const { data: signedIn, error: signInError } = await supabase.auth.signInWithPassword({ email: normalized, password });
-      if (!signInError && signedIn.session) { window.location.assign("/?setup=1"); return; }
+      if (!signInError && signedIn.session) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.email_confirmed_at && user.email?.toLowerCase().endsWith("@woxsen.edu.in")) { window.location.assign("/?setup=1"); return; }
+        await supabase.auth.signOut();
+        setMessage("Confirm your Woxsen email with the inbox link before signing in.");
+        setCanResend(true);
+        return;
+      }
       if (signInError && !/invalid login credentials|email not confirmed/i.test(signInError.message)) throw signInError;
-      const { error: signUpError } = await supabase.auth.signUp({ email: normalized, password, options: { emailRedirectTo: redirectTo } });
+      const { data: signedUp, error: signUpError } = await supabase.auth.signUp({ email: normalized, password, options: { emailRedirectTo: redirectTo } });
       if (signUpError) throw signUpError;
+      if (signedUp.session) {
+        await supabase.auth.signOut();
+        setMessage("Email confirmation is not enforced by the authentication provider. Registration is paused; contact the WoxRadar administrator.");
+        return;
+      }
       setMessage("Check your Woxsen inbox to confirm your account. You must use the confirmation link before signing in.");
       setCanResend(true);
     } catch (error) {
@@ -64,6 +77,6 @@ export function SignInPanel() {
     </form>
     <div className="mt-8 grid gap-5 border-t border-[#D9E0CD] pt-6 sm:grid-cols-2"><div><UsersRound className="size-5 text-[#315E33]"/><h2 className="mt-2 font-bold">An introduction at your pace</h2><p className="mt-1 text-sm leading-6 text-[#607767]">Everyday interests, optional questions, and saved drafts.</p></div><div><ShieldCheck className="size-5 text-[#315E33]"/><h2 className="mt-2 font-bold">Your choice to be discovered</h2><p className="mt-1 text-sm leading-6 text-[#607767]">Discovery starts off. Contact sharing needs both people’s consent.</p></div></div>
     <p className="mt-6 text-sm leading-6 text-[#607767]">Use your Woxsen email to create an account. After confirmation, complete the introduction questions before accessing campus features.</p>
-    <a href="/" className="mt-5 inline-block min-h-11 py-2 text-sm font-semibold text-[#315E33] underline">Back to WoxRadar</a>
+    <Link href="/" className="mt-5 inline-block min-h-11 py-2 text-sm font-semibold text-[#315E33] underline">Back to WoxRadar</Link>
   </section>;
 }
