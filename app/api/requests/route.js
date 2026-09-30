@@ -9,6 +9,8 @@ export async function GET(request) {
     const user = await requireCampusUser(request);
     if (user instanceof Response)
         return user;
+    if (!env.DB)
+        return campusJson({ incoming: [], outgoing: [], storage: "browser" });
     const result = await env.DB.prepare(`SELECT request.id, request.recipient_name AS recipientName, request.activity_title AS activityTitle,
       request.sender_user_id AS senderUserId, request.sender_name AS senderName,
       request.recipient_user_id AS recipientUserId, request.post_id AS postId, request.state,

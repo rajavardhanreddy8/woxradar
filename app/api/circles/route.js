@@ -6,6 +6,8 @@ export async function GET(request) {
     const user = await requireCampusUser(request);
     if (user instanceof Response)
         return user;
+    if (!env.DB)
+        return campusJson({ circles: [], memberships: [], incomingRequests: [], storage: "browser" });
     const [circleResult, membershipResult, incomingResult] = await Promise.all([
         env.DB.prepare("SELECT id, name, description, visibility, category, creator_name AS creatorName, creator_user_id AS creatorUserId, member_count AS memberCount FROM circles WHERE visibility IN ('public','private') ORDER BY created_at DESC LIMIT 40").all(),
         user ? env.DB.prepare("SELECT id, circle_id AS circleId, circle_name AS circleName, member_name AS memberName, member_initials AS memberInitials, member_user_id AS memberUserId, state, role FROM circle_memberships WHERE member_user_id = ? ORDER BY created_at DESC LIMIT 100").bind(user.userId).all() : Promise.resolve({ results: [] }),
