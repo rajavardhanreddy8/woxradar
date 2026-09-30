@@ -1,6 +1,7 @@
 import {campusJson} from "../../lib/college-access";
 import { env } from "@/lib/runtime-env";
 import { requireCampusUser } from "../../lib/college-access";
+import { requireRequestUser } from "../../lib/current-user";
 
 type BlockRow = {
   id: string;
@@ -11,6 +12,8 @@ type BlockRow = {
 };
 
 export async function GET(request: Request) {
+  const signedIn = requireRequestUser(request);
+  if (signedIn instanceof Response) return signedIn;
   // The current pilot stores authentication/profile state in Supabase. The
   // legacy safety tables are optional, so an unavailable legacy store should
   // not prevent a verified student from opening their profile.
