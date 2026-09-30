@@ -136,11 +136,16 @@ function loadState() {
 
 let state = loadState();
 let toastTimer;
+let sharedDataAvailable = true;
 
 async function request(url, options) {
   const response = await fetch(url, { cache: "no-store", ...options });
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || "WoxRadar could not complete that action.");
+  if (!response.ok) {
+    const error = new Error(data.error || "WoxRadar could not complete that action.");
+    error.status = response.status;
+    throw error;
+  }
   return data;
 }
 
@@ -262,22 +267,27 @@ async function loadCampusData() {
     request("/api/requests")
   ]);
   if (results[0].status === "fulfilled" && results[0].value.posts) {
-    state.customPosts = results[0].value.posts.map(post => ({ ...post, tags: Array.isArray(post.tags) ? post.tags : JSON.parse(post.tags || "[]") }));
+    sharedDataAvailable = results[0].value.storage !== "browser";
+    if (sharedDataAvailable) state.customPosts = results[0].value.posts.map(post => ({ ...post, tags: Array.isArray(post.tags) ? post.tags : JSON.parse(post.tags || "[]") }));
   }
   if (results[1].status === "fulfilled") {
     const data = results[1].value;
-    state.customCircles = (data.circles || []).map(circle => ({ ...circle, creator: circle.creatorName, members: circle.memberCount }));
-    state.joinedCircles = (data.memberships || []).filter(item => item.state === "accepted").map(item => item.circleId);
-    state.pendingCircles = (data.memberships || []).filter(item => item.state === "pending").map(item => item.circleId);
+    if (data.storage !== "browser") {
+      state.customCircles = (data.circles || []).map(circle => ({ ...circle, creator: circle.creatorName, members: circle.memberCount }));
+      state.joinedCircles = (data.memberships || []).filter(item => item.state === "accepted").map(item => item.circleId);
+      state.pendingCircles = (data.memberships || []).filter(item => item.state === "pending").map(item => item.circleId);
+    }
   }
   if (results[2].status === "fulfilled") {
     const data = results[2].value;
-    state.requests = [...(data.incoming || []), ...(data.outgoing || [])].map(item => ({
-      ...item, person: item.direction === "incoming" ? item.senderName : item.recipientName,
-      initials: (item.direction === "incoming" ? item.senderName : item.recipientName).split(/\s+/).map(part => part[0]).join("").slice(0,2).toUpperCase(),
-      activity: item.activityTitle, message: item.openingMessage, status: item.state,
-      shared: item.direction === "incoming" ? item.recipientSharedContact : item.senderSharedContact
-    }));
+    if (data.storage !== "browser") {
+      state.requests = [...(data.incoming || []), ...(data.outgoing || [])].map(item => ({
+        ...item, person: item.direction === "incoming" ? item.senderName : item.recipientName,
+        initials: (item.direction === "incoming" ? item.senderName : item.recipientName).split(/\s+/).map(part => part[0]).join("").slice(0,2).toUpperCase(),
+        activity: item.activityTitle, message: item.openingMessage, status: item.state,
+        shared: item.direction === "incoming" ? item.recipientSharedContact : item.senderSharedContact
+      }));
+    }
   }
 }
 
@@ -445,6 +455,11 @@ function renderExplore() {
   }));
   $$("[data-react]").forEach(button => button.addEventListener("click", async () => {
     const key = `${button.dataset.react}:${button.dataset.emoji}`;
+    if (!sharedDataAvailable) {
+      state.reactions[key] = !state.reactions[key];
+      save(); renderExplore();
+      return;
+    }
     try {
       const data = await request("/api/interactions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "reaction", postId: button.dataset.react, emoji: button.dataset.emoji }) });
       state.reactions[key] = Boolean(data.summaries?.[button.dataset.react]?.myReactions?.includes(button.dataset.emoji));
@@ -531,6 +546,14 @@ function renderCircles() {
     const joined = state.joinedCircles.includes(circle.id);
     const pending = state.pendingCircles.includes(circle.id);
     if (pending) return showToast("This access request is already pending.");
+    if (!sharedDataAvailable) {
+      if (joined) state.joinedCircles = state.joinedCircles.filter(id => id !== circle.id);
+      else if (circle.visibility === "private") state.pendingCircles.push(circle.id);
+      else state.joinedCircles.push(circle.id);
+      save(); renderCircles();
+      showToast(joined ? `You left ${circle.name}.` : circle.visibility === "private" ? "Private-circle request sent." : `Joined ${circle.name}.`);
+      return;
+    }
     try {
       await request("/api/circles/membership", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: joined ? "leave" : circle.visibility === "private" ? "request" : "join", circleId: circle.id }) });
       await loadCampusData(); save(); renderCircles();
@@ -629,6 +652,14 @@ function renderRequests() {
     const action = button.dataset.requestAction;
     if (!item) return;
     const serverAction = action === "share" ? (item.shared ? "revoke-contact" : "share-contact") : action;
+    if (!sharedDataAvailable) {
+      if (action === "accept") item.status = "accepted";
+      if (action === "decline") item.status = "declined";
+      if (action === "cancel") item.status = "cancelled";
+      if (action === "share") item.shared = !item.shared;
+      save(); renderRequests(); showToast("Invitation updated.");
+      return;
+    }
     try {
       await request("/api/requests", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ requestId: item.id, action: serverAction }) });
       await loadCampusData(); save(); renderRequests(); showToast("Invitation updated.");
@@ -911,9 +942,11 @@ function openPost(post) {
 
 async function openComments(postId) {
   const post = allPosts().find(item => item.id === postId);
-  let comments = [];
-  try { comments = (await request(`/api/interactions?postId=${encodeURIComponent(postId)}`)).comments || []; }
-  catch (error) { showToast(error.message); }
+  let comments = state.comments[postId] || [];
+  if (sharedDataAvailable) {
+    try { comments = (await request(`/api/interactions?postId=${encodeURIComponent(postId)}`)).comments || []; }
+    catch (error) { showToast(error.message); }
+  }
   openModal(`<div class="modal-head"><h2>Comments</h2><p>${esc(post.title)}</p></div>
     <div class="comment-list">
       ${comments.length ? comments.map(comment => `<article class="comment"><span class="person-avatar">${esc(comment.authorInitials || "CM")}</span><div><strong>${esc(comment.authorName || "Campus member")}</strong><p>${esc(comment.body)}</p></div></article>`).join("") : `<section class="empty-state" style="padding:1.5rem">${icon("comment")}<h2>Start the conversation</h2><p>Ask a useful question or share something others should know.</p></section>`}
@@ -927,6 +960,11 @@ async function openComments(postId) {
     event.preventDefault();
     const value = $("#commentText").value.trim();
     if (!value) return;
+    if (!sharedDataAvailable) {
+      state.comments[postId] = [...(state.comments[postId] || []), { authorName: state.profile.name, authorInitials: state.profile.name.split(/\s+/).map(part => part[0]).join("").slice(0,2).toUpperCase(), body: value }];
+      save(); closeModal(); renderExplore(); showToast("Comment added.");
+      return;
+    }
     try {
       await request("/api/interactions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "comment", postId, body: value }) });
       closeModal(); renderExplore(); showToast("Comment added.");
@@ -961,6 +999,11 @@ function openComposer() {
       tags: data.get("tags").split(",").map(item => item.trim()).filter(Boolean).slice(0, 5),
       count: 1
     };
+    if (!sharedDataAvailable) {
+      state.customPosts.unshift(post);
+      save(); closeModal(); renderExplore(); showToast("Post published to this browser demo.");
+      return;
+    }
     try {
       const data = await request("/api/posts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(post) });
       state.customPosts.unshift(data.post);
@@ -988,6 +1031,12 @@ function openCircleComposer() {
       id: "c-" + Date.now(), name: data.get("name").trim(), description: data.get("description").trim(),
       category: data.get("category"), visibility: data.get("visibility"), creator: "You", members: 1
     };
+    if (!sharedDataAvailable) {
+      state.customCircles.unshift(circle);
+      state.joinedCircles.push(circle.id);
+      save(); closeModal(); renderCircles(); showToast("Circle created in this browser demo.");
+      return;
+    }
     try {
       await request("/api/circles", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(circle) });
       await loadCampusData(); save(); closeModal(); renderCircles(); showToast("Circle created.");

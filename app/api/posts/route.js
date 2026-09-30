@@ -6,6 +6,8 @@ export async function GET(request) {
     const user = await requireCampusUser(request);
     if (user instanceof Response)
         return user;
+    if (!env.DB)
+        return campusJson({ posts: [], storage: "browser" });
     const result = await env.DB.prepare("SELECT id, type, title, detail, time_label AS time, place, tags, accent, author_user_id AS authorUserId, COALESCE(author_name, 'Campus member') AS authorName, status, created_at AS createdAt FROM posts WHERE status != 'removed' ORDER BY created_at DESC LIMIT 40").all();
     return campusJson({ posts: result.results ?? [] });
 }
