@@ -23,6 +23,7 @@ export async function requireCampusUser(request, requireSocial = true, requireCo
   try { socialContacts = typeof profile?.social_contacts === "string" ? JSON.parse(profile.social_contacts) : profile?.social_contacts || []; } catch { socialContacts = []; }
   if (requireSocial && (!Array.isArray(socialContacts) || !socialContacts.some(contact => typeof contact?.value === "string" && contact.value.trim()))) return campusJson({ error: "Add and save at least one social handle or profile link in My profile first.", needsProfile: true }, { status: 409 });
   const displayName = String(profile?.display_name || user.user_metadata?.full_name || email.split("@")[0] || "Campus member").trim().slice(0, 70);
-  return { userId: user.id, email, displayName, collegeEmail: email };
+  const initials = displayName.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "CM";
+  return { userId: user.id, email, displayName, initials, collegeEmail: email };
 }
 export function isModerator() { return false; }
