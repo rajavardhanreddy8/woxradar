@@ -467,7 +467,7 @@ function renderExplore() {
   });
 
   const actions = `
-    <button class="btn btn-primary" type="button" id="heroFind">${icon("users")} Find someone to go with</button>
+    <button class="btn btn-primary" type="button" id="heroFind">${icon("users")} Find people</button>
     <button class="btn btn-ghost-light" type="button" id="openComposer">${icon("send")} Post something</button>`;
   const stat = `<strong>${posts.length}</strong><small>open campus posts</small>`;
 
