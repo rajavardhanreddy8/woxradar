@@ -68,9 +68,9 @@ const profileSections = [
     title: "Entertainment · Questions 5–7",
     copy: "Pick what genuinely fits. These optional answers create better conversation starters.",
     questions: [
-      { key: "q5", label: "5. What do you usually choose when you have free time?", choices: ["Movies", "Series", "Short videos", "Podcasts", "A mix of everything"] },
-      { key: "q6", label: "6. Which stories or genres pull you in most?", choices: ["Comedy", "Thriller / mystery", "Action", "Romance", "Sci-fi / fantasy", "Drama", "Animation / anime"] },
-      { key: "q7", label: "7. What music mood are you most likely to share?", choices: ["Indie / pop", "Hip-hop / rap", "Bollywood", "Telugu / regional", "Electronic", "Lo-fi / acoustic", "I like discovering anything"] }
+      { key: "11", max: 4, label: "5. What kind of movies or shows pull you in?", choices: ["Comedy", "Thriller/mystery", "Action", "Romance", "Horror", "Sci-fi/fantasy", "Drama", "Crime", "Animation", "Feel-good", "Documentary", "Musical", "K-drama/anime"] },
+      { key: "17", max: 5, label: "6. What usually ends up in your playlist?", choices: ["Telugu songs", "Hindi songs", "Other Indian film songs", "English pop", "K-pop", "Indian indie", "International indie", "Hip-hop/rap", "Rock/metal", "EDM", "Classical", "Folk", "Devotional", "Lo-fi", "Mix of everything", "Don't listen much"] },
+      { key: "16", max: 2, label: "7. What's your kind of watch plan?", choices: ["Watch alone, discuss later", "With one friend", "Small group", "Cinema outing", "Online watch-together", "No preference"] }
     ]
   },
   {
@@ -78,9 +78,9 @@ const profileSections = [
     title: "Interests & plans · Questions 8–10",
     copy: "Choose the things that could give a new conversation a real starting point.",
     questions: [
-      { key: "q8", label: "8. What would you like to do with someone new?", choices: ["Build a project", "Study together", "Explore an event", "Play a sport", "Create something", "Just have a good conversation"] },
-      { key: "q9", label: "9. Which interests should help us find common ground?", choices: ["AI", "Coding", "Entrepreneurship", "Sports", "Photography", "Music", "Research", "Design"] },
-      { key: "q10", label: "10. What kind of plan sounds best?", choices: ["Coffee or a short walk", "Campus event", "Small group hangout", "Online first", "Focused work session", "No plans yet — just chat"] }
+      { key: "29", max: 2, label: "8. What would make WoxRadar worth opening?", choices: ["A reason to say hi", "Friends outside class", "Someone to hang out with", "Movie/music/meme conversation", "Join a plan", "Comfortable small group", "Study/project buddy", "Just exploring"] },
+      { key: "31", max: 5, label: "9. Apart from entertainment, what do you enjoy doing?", choices: ["Food places", "Walking/exploring", "Sports/fitness", "Photography", "Art/design", "Dance", "Singing/instruments", "Reading/writing", "Cooking", "Coding/making", "Events", "Volunteering", "Fashion", "Talking/hanging out", "Resting", "Still figuring it out"] },
+      { key: "35", max: 2, label: "10. What kind of company sounds good?", choices: ["One person to know", "Small familiar group", "Shared-interest group", "Different people for activities", "Online chat first", "Not sure"] }
     ]
   },
   {
@@ -88,10 +88,10 @@ const profileSections = [
     title: "Communication & comfort · Questions 11–14",
     copy: "You stay in control of how and when another student can contact you.",
     questions: [
-      { key: "q11", label: "11. What kind of first hello feels easiest?", choices: ["A shared-interest question", "A meme or recommendation", "A clear small-plan invitation", "A simple hello", "A shared group introduction", "A short no-pressure message"] },
-      { key: "q12", label: "12. What social setting feels most comfortable?", choices: ["One-to-one", "A small group", "A larger group", "Online first", "It depends on the activity"] },
-      { key: "q13", label: "13. How would you describe your social energy?", choices: ["Quiet at first", "Easygoing", "Very social", "Depends on the day"] },
-      { key: "q14", label: "14. Are you comfortable meeting students with different backgrounds or identities?", choices: ["Yes", "Usually", "Only in a group", "Prefer not to answer"] }
+      { key: "43", max: 2, label: "11. What makes a first message easier to answer?", choices: ["Specific shared-interest question", "Meme/recommendation with context", "Clear small-plan invitation", "Simple hello", "Shared group introduction", "Short no-pressure message", "Depends on person"] },
+      { key: "52", max: 1, label: "12. When getting to know someone new, what's your comfortable starting point?", choices: ["Comfortable meeting one-on-one", "Prefer a group first", "Prefer texting before meeting", "Depends on the person", "Still figuring it out"] },
+      { key: "34", max: 5, label: "13. Which words describe your vibe?", choices: ["Quiet", "Chatty", "Playful", "Laid-back", "Curious", "Thoughtful", "Spontaneous", "Practical", "Creative", "Helpful", "Direct", "Ambitious", "Depends on company"] },
+      { key: "56", max: 7, label: "14. What should someone respect while getting to know you?", choices: ["Time to reply", "Ask before calling", "Text before meeting", "Public first meetings", "Don't pressure personal details", "Let me decline", "Keep it friendly unless mutually changed"] }
     ]
   },
   {
@@ -115,7 +115,7 @@ const defaultState = {
   matchingJoined: false,
   requests: [],
   profileStep: 0,
-  answers: { q5: [], q6: [], q7: [], q8: [], q9: [], q10: [], q11: [], q12: [], q13: [], q14: [] },
+  answers: { "11": [], "17": [], "16": [], "29": [], "31": [], "35": [], "43": [], "52": [], "34": [], "56": [] },
   profile: {
     name: "Campus member",
     school: "",
@@ -249,11 +249,16 @@ function applyViewer(profile) {
   const savedAnswers = profile.preferences?.answers || {};
   state.answers = {
     ...defaultState.answers,
-    ...state.answers,
-    ...savedAnswers,
-    q6: savedAnswers.q6 || savedAnswers["11"] || state.answers.q6 || [],
-    q9: savedAnswers.q9 || profile.interests || state.answers.q9 || [],
-    q11: savedAnswers.q11 || savedAnswers["43"] || state.answers.q11 || []
+    "11": savedAnswers["11"] || [],
+    "17": savedAnswers["17"] || [],
+    "16": savedAnswers["16"] || [],
+    "29": savedAnswers["29"] || [],
+    "31": savedAnswers["31"] || [],
+    "35": savedAnswers["35"] || [],
+    "43": savedAnswers["43"] || [],
+    "52": savedAnswers["52"] || [],
+    "34": savedAnswers["34"] || [],
+    "56": savedAnswers["56"] || []
   };
   $("#userAvatar").textContent = profile.initials || "?";
 }
@@ -618,7 +623,6 @@ function personCard(person, index) {
       <div class="person-title">
         <h3>${esc(person.name)}</h3>
         ${index === 0 ? '<span class="micro-chip strong-chip">Strongest context</span>' : ""}
-        <span class="micro-chip example-chip">Example profile</span>
       </div>
       <p class="person-subtitle">${esc(person.course)} · Year ${person.year} · ${esc(person.school)}</p>
       <div class="reasons">${person.reasons.map(reason => `<span class="reason">${icon("check")} ${esc(reason)}</span>`).join("")}</div>
@@ -759,7 +763,8 @@ function renderProfile() {
     const key = button.dataset.choiceKey;
     const value = button.dataset.choice;
     const selected = state.answers[key] || [];
-    state.answers[key] = selected.includes(value) ? selected.filter(item => item !== value) : [...selected, value].slice(0, 5);
+    const max = Number(button.dataset.choiceMax || 1);
+    state.answers[key] = selected.includes(value) ? selected.filter(item => item !== value) : [...selected, value].slice(-max);
     save(); renderProfile();
   }));
   $("#profileBack").addEventListener("click", () => {
@@ -808,7 +813,7 @@ function profileStepContent(step, section) {
         <p>${esc(state.profile.email)}</p>
       </div>
       <div class="form-grid">
-        <label class="field">4. Add a social account (optional)<input id="profileSocial" value="${esc(state.profile.social)}" placeholder="@yourhandle"></label>
+        <label class="field">4. Add a social account (required)<input id="profileSocial" value="${esc(state.profile.social)}" placeholder="@yourhandle" required></label>
       </div>
       <p>Social contacts stay private until both students choose to share.</p>
     </section>`;
@@ -819,7 +824,7 @@ function profileStepContent(step, section) {
       <div class="question-stack">${section.questions.map(question => {
         const selected = state.answers[question.key] || [];
         return `<section class="question-block"><h3>${question.label}</h3><div class="choice-grid">${question.choices.map(choice => `
-          <button class="choice ${selected.includes(choice) ? "selected" : ""}" type="button" data-choice-key="${question.key}" data-choice="${esc(choice)}">${esc(choice)}</button>
+          <button class="choice ${selected.includes(choice) ? "selected" : ""}" type="button" data-choice-key="${question.key}" data-choice-max="${question.max}" data-choice="${esc(choice)}">${esc(choice)}</button>
         `).join("")}</div></section>`;
       }).join("")}</div>
     </section>`;
@@ -829,9 +834,9 @@ function profileStepContent(step, section) {
     <dl class="review-grid">
       <div><dt>Campus</dt><dd>${esc(state.profile.name)} · ${esc(state.profile.course)} · Year ${esc(state.profile.year)}</dd></div>
       <div><dt>College email</dt><dd>${state.profile.verified ? "Verified" : "Not verified"}</dd></div>
-      <div><dt>Entertainment</dt><dd>${esc([...(state.answers.q5 || []), ...(state.answers.q6 || []), ...(state.answers.q7 || [])].join(", ") || "Not answered")}</dd></div>
-      <div><dt>Interests & plans</dt><dd>${esc([...(state.answers.q8 || []), ...(state.answers.q9 || []), ...(state.answers.q10 || [])].join(", ") || "Not answered")}</dd></div>
-      <div><dt>Communication</dt><dd>${esc([...(state.answers.q11 || []), ...(state.answers.q12 || []), ...(state.answers.q13 || []), ...(state.answers.q14 || [])].join(", ") || "Not answered")}</dd></div>
+      <div><dt>Entertainment</dt><dd>${esc([...(state.answers["11"] || []), ...(state.answers["17"] || []), ...(state.answers["16"] || [])].join(", ") || "Not answered")}</dd></div>
+      <div><dt>Interests & plans</dt><dd>${esc([...(state.answers["29"] || []), ...(state.answers["31"] || []), ...(state.answers["35"] || [])].join(", ") || "Not answered")}</dd></div>
+      <div><dt>Communication</dt><dd>${esc([...(state.answers["43"] || []), ...(state.answers["52"] || []), ...(state.answers["34"] || []), ...(state.answers["56"] || [])].join(", ") || "Not answered")}</dd></div>
       <div><dt>Private contact</dt><dd>${esc(state.profile.social || "Not added")}</dd></div>
     </dl>
   </section>
@@ -856,12 +861,18 @@ function profilePayload(intent = "draft") {
   const platform = social.includes("linkedin.com") ? "LinkedIn" : social.includes("snapchat.com") ? "Snapchat" : social.includes("threads.") ? "Threads" : social.startsWith("https://") && !social.includes("instagram.com") ? "Other" : "Instagram";
   const socialContacts = state.profile.social ? [{ platform, value: state.profile.social }] : [];
   const previous = viewer?.preferences || {};
+  const currentAnswers = Object.fromEntries(
+    profileSections.flatMap(section => section.questions || []).map(question => [question.key, state.answers[question.key] || []])
+  );
   return {
     displayName: state.profile.name,
     school: state.profile.school,
     course: state.profile.course,
     year: state.profile.year,
-    interests: state.answers.q9 || [],
+    interests: (state.answers["31"] || []).map(value => ({
+      "Sports/fitness": "Sports", Photography: "Photography", "Art/design": "Design",
+      "Singing/instruments": "Music", "Coding/making": "Coding"
+    })[value]).filter(Boolean),
     skills: viewer?.skills || [],
     availability: viewer?.availability?.length ? viewer.availability : ["Friday evening"],
     meetingFormats: viewer?.meetingFormats?.length ? viewer.meetingFormats : ["Small group"],
@@ -873,7 +884,7 @@ function profilePayload(intent = "draft") {
       ...previous,
       shareEntertainment: state.profile.shareInterests,
       languageMatchingOptIn: state.profile.languageMatching,
-      answers: { ...(previous.answers || {}), ...state.answers },
+      answers: { ...(previous.answers || {}), ...currentAnswers },
       goals: previous.goals || [], learnNext: previous.learnNext || [], socialEnergy: previous.socialEnergy || "",
       planStyle: previous.planStyle || "", groupSize: previous.groupSize || "", topics: previous.topics || [],
       icebreakerPrompt: previous.icebreakerPrompt || "", icebreakerAnswer: previous.icebreakerAnswer || "",

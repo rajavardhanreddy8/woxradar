@@ -8,7 +8,7 @@ export function verificationFor(userId) { return env.DB.prepare("SELECT verified
 export async function requireCampusUser(request, requireSocial = true, requireCompleted = true) { const user = requireRequestUser(request); if (user instanceof Response)
     return user; try {
     if (await env.DB.prepare("SELECT user_id FROM campus_suspensions WHERE user_id=?").bind(user.userId).first())
-        return campusJson({ error: "Your campus access is paused. Contact the pilot administrator." }, { status: 403 });
+        return campusJson({ error: "Your campus access is paused. Contact the WoxRadar administrator." }, { status: 403 });
     const v = await verificationFor(user.userId);
     if (!v)
         return campusJson({ error: "Verify your @woxsen.edu.in email in My profile first.", needsVerification: true }, { status: 403 });
