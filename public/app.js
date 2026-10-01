@@ -180,7 +180,7 @@ function showAuthentication(message = "") {
     <p>Sign in with your Woxsen email, confirm the link in your inbox, and complete your introduction before accessing campus features.</p>
     <form id="authForm" class="auth-form">
       <label class="field">College email<input name="email" type="email" required autocomplete="email" placeholder="you@woxsen.edu.in"></label>
-      <label class="field">Password<input name="password" type="password" required minlength="8" autocomplete="current-password" placeholder="Password (8+ characters)"></label>
+      <label class="field">Password<input name="password" type="password" required minlength="8" autocomplete="current-password" placeholder="8+ characters, uppercase, lowercase, number"></label>
       <button class="btn btn-dark" type="submit">Sign in or create account ${icon("arrow")}</button>
       <p id="authMessage" class="auth-message" ${message ? "" : "hidden"}>${esc(message)}</p>
       <button id="resendConfirmation" class="btn btn-outline" type="button">Resend confirmation email</button>
@@ -203,16 +203,25 @@ async function authenticate(event) {
   const email = String(form.get("email") || "").trim().toLowerCase();
   const password = String(form.get("password") || "");
   if (!email.endsWith("@woxsen.edu.in")) return authMessage("Use your @woxsen.edu.in email address.");
-  if (password.length < 8) return authMessage("Use a password with at least 8 characters.");
+  if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(password)) {
+    return authMessage("Use 8+ characters with an uppercase letter, lowercase letter, and number.");
+  }
   const button = $("button[type=submit]", event.currentTarget);
   button.disabled = true;
   try {
     const signedIn = await authRequest({ action: "signin", email, password });
     if (signedIn.session) return window.location.assign("/?setup=1");
-    if (!/invalid login credentials|email not confirmed/i.test(signedIn.error || "")) throw new Error(signedIn.error || "Could not sign in.");
+    const signInError = signedIn.error || "";
+    if (/email not confirmed/i.test(signInError)) {
+      const resend = await authRequest({ action: "resend", email });
+      if (resend.error) throw new Error(resend.error);
+      authMessage("A fresh confirmation link was sent. Open only the newest link once, then sign in.");
+      return;
+    }
+    if (!/invalid login credentials/i.test(signInError)) throw new Error(signInError || "Could not sign in.");
     const result = await authRequest({ action: "signup", email, password });
     if (result.error) throw new Error(result.error);
-    authMessage("Check your Woxsen inbox and open the confirmation link before signing in.");
+    authMessage("Check your Woxsen inbox for the confirmation email. Open the newest link once before signing in.");
   } catch (error) {
     authMessage(error.message || "Could not sign in. Please try again.");
   } finally {
@@ -221,13 +230,19 @@ async function authenticate(event) {
 }
 
 async function resendConfirmation() {
-  const email = String(new FormData($("#authForm")).get("email") || "").trim().toLowerCase();
+  const form = $("#authForm");
+  const email = String(new FormData(form).get("email") || "").trim().toLowerCase();
   if (!email.endsWith("@woxsen.edu.in")) return authMessage("Enter your Woxsen email first.");
+  const button = $("#resendConfirmation");
+  button.disabled = true;
   try {
     const result = await authRequest({ action: "resend", email });
-    authMessage(result.error || "A fresh confirmation link was sent. Check spam too.");
+    if (result.error) throw new Error(result.error);
+    authMessage("A fresh confirmation link was sent. Check Inbox, Spam, and Promotions; open only the newest link once.");
   } catch (error) {
     authMessage(error.message || "Could not send a confirmation link.");
+  } finally {
+    button.disabled = false;
   }
 }
 
@@ -267,7 +282,15 @@ function applyViewer(profile) {
 async function boot() {
   try {
     const profileResult = await fetch("/api/profile", { cache: "no-store" });
-    if (profileResult.status === 401) return showAuthentication();
+    if (profileResult.status === 401) {
+      const params = new URLSearchParams(location.search);
+      const message = params.has("confirmed")
+        ? "Your email is confirmed. Sign in to continue."
+        : params.has("confirmation_failed")
+          ? "That confirmation link is no longer valid. Request a fresh link and open only the newest one."
+          : "";
+      return showAuthentication(message);
+    }
     const data = await profileResult.json();
     if (!profileResult.ok || !data.profile) throw new Error(data.error || "Could not load your account.");
     applyViewer(data.profile);
