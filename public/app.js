@@ -637,7 +637,7 @@ function renderMatches() {
     `}
   </div>`;
 
-  $("#chooseActivity").addEventListener("click", () => switchTab("explore"));
+  $("#chooseActivity")?.addEventListener("click", () => switchTab("explore"));
   $("#openProfile")?.addEventListener("click", () => switchTab("profile"));
   $("#joinMatching")?.addEventListener("click", async () => {
     try { if (sharedDataAvailable) await request("/api/matches", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({postId:activity.id}) }); state.matchingJoined = true; await refreshMatches(); save(); renderMatches(); showToast("You joined this activity’s matching pool."); } catch(error) { showToast(error.message); }
@@ -669,7 +669,13 @@ function personCard(person, index) {
 
 async function refreshMatches() {
   if (!sharedDataAvailable) return;
-  const data = await request(`/api/matches?postId=${encodeURIComponent(selectedPost().id)}`);
+  const activity = selectedPost();
+  if (!activity || activity.type !== "Activity") {
+    state.matchingJoined = false;
+    liveMatches = [];
+    return;
+  }
+  const data = await request(`/api/matches?postId=${encodeURIComponent(activity.id)}`);
   state.matchingJoined = Boolean(data.viewerOptedIn);
   liveMatches = (data.matches || []).map(person => ({ id:person.userId, name:person.displayName, initials:person.initials, course:person.course || "Course not shared", year:person.year || "—", school:person.school || "Woxsen University", reasons:person.reasons || ["Both opted into this activity"], starter:person.conversationStarter || "What are you hoping to do at this activity?" }));
 }
