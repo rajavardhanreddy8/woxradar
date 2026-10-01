@@ -33,7 +33,15 @@ export async function POST(request) {
       return responseWithCookies({ session: Boolean(data.session), error: error?.message || "" }, error ? 400 : 200, pendingCookies);
     }
     if (action === "signup") {
-      const { error } = await supabase.auth.signUp({ email: normalizedEmail, password: String(password || ""), options: { emailRedirectTo: callbackUrl } });
+      const suppliedPassword = String(password || "");
+      if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(suppliedPassword)) {
+        return responseWithCookies({ error: "Use 8+ characters with an uppercase letter, lowercase letter, and number." }, 400, pendingCookies);
+      }
+      const { error } = await supabase.auth.signUp({
+        email: normalizedEmail,
+        password: suppliedPassword,
+        options: { emailRedirectTo: callbackUrl }
+      });
       return responseWithCookies({ ok: !error, error: error?.message || "" }, error ? 400 : 200, pendingCookies);
     }
     if (action === "resend") {
