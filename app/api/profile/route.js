@@ -1,7 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 import { emptyPreferences, INTRODUCTION_VERSION, profileInputSchema, readinessErrors } from "@/app/lib/introduction";
-import { throwIf } from "@/app/lib/supabase-server";
 function initials(name) { return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "CM"; }
 function getClient(request, response) {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL, key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -46,8 +45,18 @@ export async function PUT(request) {
         const { error } = await supabase.auth.updateUser({ data: { ...user.user_metadata, full_name: profile.displayName, wox_profile: profile } });
         if (error)
             throw error;
-        throwIf((await supabase.from("wox_profiles_public").upsert({ user_id:user.id, display_name:profile.displayName, initials:initials(profile.displayName), course:profile.course, school:profile.school, year:profile.year, interests:profile.interests, skills:profile.skills, discovery_enabled:Boolean(profile.discoveryEnabled), profile_completed:Boolean(profile.profileCompleted), updated_at:new Date().toISOString() })).error);
-        throwIf((await supabase.from("wox_profiles_private").upsert({ user_id:user.id, availability:profile.availability, meeting_formats:profile.meetingFormats, preferences:profile.preferences, discovery_scope:profile.discoveryScope, social_contacts:profile.socialContacts, updated_at:new Date().toISOString() })).error);
+        const now = Date.now();
+        const { error: profileError } = await supabase.from("wox_profiles").upsert({
+            user_id: user.id, email: user.email, display_name: profile.displayName, initials: initials(profile.displayName),
+            school: profile.school, course: profile.course, year: profile.year,
+            interests: JSON.stringify(profile.interests), skills: JSON.stringify(profile.skills),
+            availability: JSON.stringify(profile.availability), meeting_formats: JSON.stringify(profile.meetingFormats),
+            discovery_scope: profile.discoveryScope, discovery_enabled: profile.discoveryEnabled ? 1 : 0,
+            profile_completed: profile.profileCompleted ? 1 : 0, preferences: JSON.stringify(profile.preferences),
+            onboarding_version: profile.onboardingVersion, onboarding_step: profile.onboardingStep,
+            social_contacts: JSON.stringify(profile.socialContacts), created_at: now, updated_at: now
+        }, { onConflict: "user_id" });
+        if (profileError) throw profileError;
         return NextResponse.json({ profile });
     }
     catch (error) {
@@ -64,7 +73,8 @@ export async function PATCH(request) {
         const { error } = await supabase.auth.updateUser({ data: { ...user.user_metadata, wox_profile: profile } });
         if (error)
             throw error;
-        throwIf((await supabase.from("wox_profiles_public").update({ discovery_enabled:false, updated_at:new Date().toISOString() }).eq("user_id",user.id)).error);
+        const { error: profileError } = await supabase.from("wox_profiles").update({ discovery_enabled: 0, updated_at: Date.now() }).eq("user_id", user.id);
+        if (profileError) throw profileError;
         return NextResponse.json({ paused: true, profile });
     }
     catch {
