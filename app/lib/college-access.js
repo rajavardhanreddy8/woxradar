@@ -6,9 +6,15 @@ export function campusJson(data, init = {}) { const headers = new Headers(init.h
 export function collegeEmail(value) { const email = typeof value === "string" ? value.trim().toLowerCase() : ""; return /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@woxsen\.edu\.in$/.test(email) && email.length <= 254 ? email : null; }
 export function verificationFor(userId) { return env.DB.prepare("SELECT verified_email AS collegeEmail,verified_at AS verifiedAt FROM college_verifications WHERE user_id=? AND verified_email IS NOT NULL").bind(userId).first(); }
 export async function requireCampusUser(request, requireSocial = true, requireCompleted = true) { const user = requireRequestUser(request); if (user instanceof Response)
-    return user; try {
+    return user;
+    // The Vercel version keeps authentication and onboarding in Supabase,
+    // while campus activity data falls back to this browser when legacy DB
+    // bindings are unavailable.
+    if (!env.DB)
+        return user;
+    try {
     if (await env.DB.prepare("SELECT user_id FROM campus_suspensions WHERE user_id=?").bind(user.userId).first())
-        return campusJson({ error: "Your campus access is paused. Contact the pilot administrator." }, { status: 403 });
+        return campusJson({ error: "Your campus access is paused. Contact the WoxRadar administrator." }, { status: 403 });
     const v = await verificationFor(user.userId);
     if (!v)
         return campusJson({ error: "Verify your @woxsen.edu.in email in My profile first.", needsVerification: true }, { status: 403 });

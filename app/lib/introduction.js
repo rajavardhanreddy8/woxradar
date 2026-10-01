@@ -49,14 +49,14 @@ export const profileInputSchema = z.object({
 });
 export function readinessErrors(p) {
     const errors = [];
-    if (!p.displayName || !p.school || !p.course || !p.year)
-        errors.push("Add your display name, school, course and year.");
+    if (!p.displayName || !p.course || !p.year)
+        errors.push("Add your display name, course and year.");
     if (!p.socialContacts.length)
         errors.push("Add at least one social handle or profile link. It stays private until you choose to share.");
     if (p.discoveryEnabled && !p.meetingFormats.length)
         errors.push("Choose a comfortable first-hello format before enabling discovery.");
     if (p.preferences.answers["5"]?.includes("Under 18"))
-        errors.push("This first pilot is for students aged 18 or older.");
+        errors.push("WoxRadar is currently for students aged 18 or older.");
     if (p.preferences.shareIcebreaker && (!p.preferences.icebreakerPrompt || !p.preferences.icebreakerAnswer))
         errors.push("Add a prompt and answer, or turn off sharing your icebreaker.");
     return errors;
