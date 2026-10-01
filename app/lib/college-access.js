@@ -16,10 +16,13 @@ export async function requireCampusUser(request, requireSocial = true, requireCo
   const { data: suspension, error } = await db.from("wox_suspensions").select("user_id").eq("user_id", user.id).maybeSingle();
   if (error) return campusJson({ error: "Campus access could not be checked. Retry." }, { status: 503 });
   if (suspension) return campusJson({ error: "Your campus access is paused. Contact the WoxRadar administrator." }, { status: 403 });
-  const profile = user.user_metadata?.wox_profile;
-  if (requireCompleted && profile?.profileCompleted !== true) return campusJson({ error: "Finish the WoxRadar questions before opening campus features.", needsProfile: true }, { status: 409 });
-  if (requireSocial && (!Array.isArray(profile?.socialContacts) || !profile.socialContacts.some(contact => typeof contact?.value === "string" && contact.value.trim()))) return campusJson({ error: "Add and save at least one social handle or profile link in My profile first.", needsProfile: true }, { status: 409 });
-  const displayName = String(profile?.displayName || user.user_metadata?.full_name || email.split("@")[0] || "Campus member").trim().slice(0, 70);
+  const { data: profile, error: profileError } = await db.from("wox_profiles").select("display_name, profile_completed, social_contacts").eq("user_id", user.id).maybeSingle();
+  if (profileError) return campusJson({ error: "Your profile could not be checked. Retry." }, { status: 503 });
+  if (requireCompleted && profile?.profile_completed !== 1) return campusJson({ error: "Finish the WoxRadar questions before opening campus features.", needsProfile: true }, { status: 409 });
+  let socialContacts = [];
+  try { socialContacts = typeof profile?.social_contacts === "string" ? JSON.parse(profile.social_contacts) : profile?.social_contacts || []; } catch { socialContacts = []; }
+  if (requireSocial && (!Array.isArray(socialContacts) || !socialContacts.some(contact => typeof contact?.value === "string" && contact.value.trim()))) return campusJson({ error: "Add and save at least one social handle or profile link in My profile first.", needsProfile: true }, { status: 409 });
+  const displayName = String(profile?.display_name || user.user_metadata?.full_name || email.split("@")[0] || "Campus member").trim().slice(0, 70);
   return { userId: user.id, email, displayName, collegeEmail: email };
 }
 export function isModerator() { return false; }
