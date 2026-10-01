@@ -1,48 +1,7 @@
-import { campusJson } from "../../lib/college-access";
-import { env } from "@/lib/runtime-env";
-import { requireCampusUser } from "../../lib/college-access";
-const allowedTypes = new Set(["Activity", "Opportunity", "Exchange", "Gig"]);
-export async function GET(request) {
-    if (!env.DB)
-        return campusJson({ posts: [], storage: "browser" });
-    const user = await requireCampusUser(request);
-    if (user instanceof Response)
-        return user;
-    const result = await env.DB.prepare("SELECT id, type, title, detail, time_label AS time, place, tags, accent, author_user_id AS authorUserId, COALESCE(author_name, 'Campus member') AS authorName, status, created_at AS createdAt FROM posts WHERE status != 'removed' ORDER BY created_at DESC LIMIT 40").all();
-    return campusJson({ posts: result.results ?? [] });
-}
-export async function POST(request) {
-    const user = await requireCampusUser(request);
-    if (user instanceof Response)
-        return user;
-    const data = await request.json();
-    const type = typeof data.type === "string" && allowedTypes.has(data.type) ? data.type : "Activity";
-    const title = typeof data.title === "string" ? data.title.trim().slice(0, 100) : "";
-    const detail = typeof data.detail === "string" ? data.detail.trim().slice(0, 360) : "";
-    const time = typeof data.time === "string" ? data.time.trim().slice(0, 80) : "";
-    const place = typeof data.place === "string" ? data.place.trim().slice(0, 100) : "";
-    const tags = Array.isArray(data.tags) ? data.tags.filter((tag) => typeof tag === "string").slice(0, 5) : [];
-    if (!title || !detail || !time || !place)
-        return campusJson({ error: "Add a title, short description, time and location." }, { status: 400 });
-    const createdAt = Date.now();
-    const post = { id: crypto.randomUUID(), type, title, detail, time, place, tags, accent: "lime", authorUserId: user.userId, authorName: user.displayName, status: "open", createdAt };
-    await env.DB.prepare("INSERT INTO posts (id, type, title, detail, time_label, place, tags, accent, author_user_id, author_name, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(post.id, post.type, post.title, post.detail, post.time, post.place, JSON.stringify(post.tags), post.accent, user.userId, post.authorName, post.status, createdAt).run();
-    return campusJson({ post }, { status: 201 });
-}
-export async function PATCH(request) {
-    const user = await requireCampusUser(request);
-    if (user instanceof Response)
-        return user;
-    const data = await request.json();
-    const postId = typeof data.postId === "string" ? data.postId.trim().slice(0, 100) : "";
-    const status = data.status === "closed" ? "closed" : data.status === "open" ? "open" : "";
-    if (!postId || !status)
-        return campusJson({ error: "Choose a valid post status." }, { status: 400 });
-    const post = await env.DB.prepare("SELECT author_user_id AS authorUserId FROM posts WHERE id = ? LIMIT 1").bind(postId).first();
-    if (!post)
-        return campusJson({ error: "Post not found." }, { status: 404 });
-    if (post.authorUserId !== user.userId)
-        return campusJson({ error: "Only the post owner can change its status." }, { status: 403 });
-    await env.DB.prepare("UPDATE posts SET status = ? WHERE id = ?").bind(status, postId).run();
-    return campusJson({ postId, status });
-}
+import { campusJson, requireCampusUser } from "../../lib/college-access";
+import { campusSupabase, throwIf } from "../../lib/supabase-server";
+const allowedTypes=new Set(["Activity","Opportunity","Exchange","Gig"]);
+const mapPost=p=>({id:p.id,type:p.type,title:p.title,detail:p.detail,time:p.time_label,place:p.place,tags:p.tags,accent:p.accent,authorUserId:p.author_user_id,authorName:p.author_name,status:p.status,createdAt:new Date(p.created_at).getTime()});
+export async function GET(request){const user=await requireCampusUser(request);if(user instanceof Response)return user;try{const{data,error}=await campusSupabase(request).from("wox_posts").select("*").neq("status","removed").order("created_at",{ascending:false}).limit(40);throwIf(error);return campusJson({posts:(data||[]).map(mapPost),storage:"supabase"});}catch{return campusJson({error:"Campus posts could not be loaded."},{status:503});}}
+export async function POST(request){const user=await requireCampusUser(request);if(user instanceof Response)return user;const d=await request.json(),type=allowedTypes.has(d.type)?d.type:"Activity",title=String(d.title||"").trim().slice(0,100),detail=String(d.detail||"").trim().slice(0,360),time=String(d.time||"").trim().slice(0,80),place=String(d.place||"").trim().slice(0,100),tags=Array.isArray(d.tags)?d.tags.filter(x=>typeof x==="string").slice(0,5):[];if(!title||!detail||!time||!place)return campusJson({error:"Add a title, short description, time and location."},{status:400});const row={id:crypto.randomUUID(),type,title,detail,time_label:time,place,tags,accent:"lime",author_user_id:user.userId,author_name:user.displayName,status:"open"};try{const{data,error}=await campusSupabase(request).from("wox_posts").insert(row).select().single();throwIf(error);return campusJson({post:mapPost(data)},{status:201});}catch{return campusJson({error:"Could not publish this post."},{status:503});}}
+export async function PATCH(request){const user=await requireCampusUser(request);if(user instanceof Response)return user;const d=await request.json(),postId=String(d.postId||"").trim().slice(0,100),status=["open","closed"].includes(d.status)?d.status:"";if(!postId||!status)return campusJson({error:"Choose a valid post status."},{status:400});const{data,error}=await campusSupabase(request).from("wox_posts").update({status}).eq("id",postId).eq("author_user_id",user.userId).select("id").maybeSingle();if(error)return campusJson({error:"Could not update this post."},{status:503});return data?campusJson({postId,status}):campusJson({error:"Only the post owner can change its status."},{status:403});}

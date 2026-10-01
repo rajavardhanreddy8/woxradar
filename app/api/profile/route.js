@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 import { emptyPreferences, INTRODUCTION_VERSION, profileInputSchema, readinessErrors } from "@/app/lib/introduction";
+import { throwIf } from "@/app/lib/supabase-server";
 function initials(name) { return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "CM"; }
 function getClient(request, response) {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL, key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -45,6 +46,8 @@ export async function PUT(request) {
         const { error } = await supabase.auth.updateUser({ data: { ...user.user_metadata, full_name: profile.displayName, wox_profile: profile } });
         if (error)
             throw error;
+        throwIf((await supabase.from("wox_profiles_public").upsert({ user_id:user.id, display_name:profile.displayName, initials:initials(profile.displayName), course:profile.course, school:profile.school, year:profile.year, interests:profile.interests, skills:profile.skills, discovery_enabled:Boolean(profile.discoveryEnabled), profile_completed:Boolean(profile.profileCompleted), updated_at:new Date().toISOString() })).error);
+        throwIf((await supabase.from("wox_profiles_private").upsert({ user_id:user.id, availability:profile.availability, meeting_formats:profile.meetingFormats, preferences:profile.preferences, discovery_scope:profile.discoveryScope, social_contacts:profile.socialContacts, updated_at:new Date().toISOString() })).error);
         return NextResponse.json({ profile });
     }
     catch (error) {
@@ -61,6 +64,7 @@ export async function PATCH(request) {
         const { error } = await supabase.auth.updateUser({ data: { ...user.user_metadata, wox_profile: profile } });
         if (error)
             throw error;
+        throwIf((await supabase.from("wox_profiles_public").update({ discovery_enabled:false, updated_at:new Date().toISOString() }).eq("user_id",user.id)).error);
         return NextResponse.json({ paused: true, profile });
     }
     catch {
