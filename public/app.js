@@ -147,6 +147,7 @@ function loadState() {
 let state = loadState();
 let toastTimer;
 let sharedDataAvailable = true;
+let liveMatches = [];
 
 async function request(url, options) {
   const response = await fetch(url, { cache: "no-store", ...options });
@@ -361,8 +362,8 @@ const navItems = [
   ["impact", "chart", "Your activity"]
 ];
 
-function allPosts() { return [...state.customPosts, ...basePosts]; }
-function allCircles() { return [...state.customCircles, ...baseCircles]; }
+function allPosts() { return sharedDataAvailable ? state.customPosts : [...state.customPosts, ...basePosts]; }
+function allCircles() { return sharedDataAvailable ? state.customCircles : [...state.customCircles, ...baseCircles]; }
 function selectedPost() { return allPosts().find(post => post.id === state.selectedActivity) || allPosts()[0]; }
 
 function showToast(message) {
@@ -428,6 +429,7 @@ function renderCurrent() {
     impact: renderImpact
   };
   (renderers[state.tab] || renderExplore)();
+  if (state.tab === "matches" && sharedDataAvailable) refreshMatches().then(() => renderMatches()).catch(error => showToast(error.message));
 }
 
 function typeClass(type) { return "type-" + type.toLowerCase(); }
@@ -586,6 +588,7 @@ function renderCircles() {
 function renderMatches() {
   const activity = selectedPost();
   const joined = state.matchingJoined;
+  const candidates = sharedDataAvailable ? liveMatches : matchCandidates;
   const actions = `<button class="btn btn-ghost-light" type="button" id="chooseActivity">${icon("back")} Choose another activity</button>`;
   $("#workspace").innerHTML = `<div class="view-stack">
     ${hero("Activity buddy", `People to meet at ${activity.title}`, "Candidates opt in, pass both students’ discovery settings and share a comfortable meeting format.", actions)}
@@ -595,22 +598,22 @@ function renderMatches() {
       <section class="callout"><h2>Join this activity’s matching pool</h2><p>Only other students who also opt into this activity can be suggested. You can leave at any time.</p><button class="btn btn-dark" type="button" id="joinMatching" style="margin-top:.8rem">${icon("users")} I want someone to go with</button></section>
     ` : `
       <div class="match-header">
-        <div><p>${matchCandidates.length + 1} eligible in this pool</p><h2>Eligible people, ranked by context</h2></div>
+        <div><p>${candidates.length + 1} eligible in this pool</p><h2>Eligible people, ranked by context</h2></div>
         <button class="btn btn-outline" type="button" id="leaveMatching">${icon("x")} Leave matching</button>
       </div>
       <div class="person-list">
-        ${matchCandidates.map((person, index) => personCard(person, index)).join("")}
+        ${candidates.length ? candidates.map((person, index) => personCard(person, index)).join("") : '<section class="empty-state"><h2>No other students have joined yet</h2><p>Your place is saved. Check again after another verified student opts in.</p></section>'}
       </div>
     `}
   </div>`;
 
   $("#chooseActivity").addEventListener("click", () => switchTab("explore"));
   $("#openProfile")?.addEventListener("click", () => switchTab("profile"));
-  $("#joinMatching")?.addEventListener("click", () => {
-    state.matchingJoined = true; save(); renderMatches(); showToast("You joined this activity’s matching pool.");
+  $("#joinMatching")?.addEventListener("click", async () => {
+    try { if (sharedDataAvailable) await request("/api/matches", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({postId:activity.id}) }); state.matchingJoined = true; await refreshMatches(); save(); renderMatches(); showToast("You joined this activity’s matching pool."); } catch(error) { showToast(error.message); }
   });
-  $("#leaveMatching")?.addEventListener("click", () => {
-    state.matchingJoined = false; save(); renderMatches(); showToast("You left this matching pool.");
+  $("#leaveMatching")?.addEventListener("click", async () => {
+    try { if (sharedDataAvailable) await request("/api/matches", { method:"DELETE", headers:{"Content-Type":"application/json"}, body:JSON.stringify({postId:activity.id}) }); state.matchingJoined = false; liveMatches=[]; save(); renderMatches(); showToast("You left this matching pool."); } catch(error) { showToast(error.message); }
   });
   $$("[data-invite]").forEach(button => button.addEventListener("click", () => sendInvite(button.dataset.invite)));
 }
@@ -634,10 +637,21 @@ function personCard(person, index) {
   </article>`;
 }
 
-function sendInvite(personId) {
-  const person = matchCandidates.find(item => item.id === personId);
+async function refreshMatches() {
+  if (!sharedDataAvailable) return;
+  const data = await request(`/api/matches?postId=${encodeURIComponent(selectedPost().id)}`);
+  state.matchingJoined = Boolean(data.viewerOptedIn);
+  liveMatches = (data.matches || []).map(person => ({ id:person.userId, name:person.displayName, initials:person.initials, course:person.course || "Course not shared", year:person.year || "—", school:person.school || "Woxsen University", reasons:person.reasons || ["Both opted into this activity"], starter:person.conversationStarter || "What are you hoping to do at this activity?" }));
+}
+
+async function sendInvite(personId) {
+  const person = (sharedDataAvailable ? liveMatches : matchCandidates).find(item => item.id === personId);
   if (!person) return;
   const message = $(`#message-${personId}`)?.value.trim() || person.starter;
+  if (sharedDataAvailable) {
+    try { await request("/api/requests", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({recipientUserId:personId,postId:selectedPost().id,openingMessage:message}) }); await loadCampusData(); save(); renderMatches(); showToast(`Invitation sent to ${person.name}.`); } catch(error) { showToast(error.message); }
+    return;
+  }
   state.requests.unshift({
     id: "r-" + Date.now(),
     personId,
