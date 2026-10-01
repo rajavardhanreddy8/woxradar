@@ -6,7 +6,7 @@ import { collegeEmail, verificationFor } from "../../lib/college-access";
 const reply = (data, status = 200) => campusJson(data, { status, headers: { "Cache-Control": "no-store" } });
 export async function GET(request) { const user = requireRequestUser(request); if (user instanceof Response)
     return user; try {
-    const v = await verificationFor(user.userId);
+    const v = await verificationFor(user.userId, request);
     return reply({ verified: Boolean(v), collegeEmail: v?.collegeEmail ?? null, senderConfigured: Boolean(await emailSettings() && env.EMAIL_CODE_SECRET) });
 }
 catch {
@@ -39,7 +39,7 @@ export async function POST(request) {
     if (!sender || !env.EMAIL_CODE_SECRET)
         return reply({ error: "College email verification is waiting for the pilot email sender. Your draft can still be saved.", senderConfigured: false }, 503);
     try {
-        const v = await verificationFor(user.userId);
+        const v = await verificationFor(user.userId, request);
         if (v)
             return reply({ verified: true, collegeEmail: v.collegeEmail });
         if (data.action === "send") {
