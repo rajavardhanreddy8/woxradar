@@ -462,8 +462,10 @@ function renderExplore() {
       <section class="empty-state">${icon("compass")}<h2>No posts match this search</h2><p>Try another keyword or clear the filters to see everything happening around campus.</p><button class="btn btn-outline" type="button" id="clearSearch">Clear search</button></section>`}
   </div>`;
 
-  $("#heroFind").addEventListener("click", () => {
-    state.selectedActivity = posts.find(post => post.type === "Activity")?.id || posts[0]?.id;
+ $("#heroFind").addEventListener("click", () => {
+    const activity = posts.find(post => post.type === "Activity");
+    if (!activity) return showToast("No open activity is available for matching yet.");
+    state.selectedActivity = activity.id;
     switchTab("matches");
   });
   $("#openComposer").addEventListener("click", openComposer);
@@ -587,6 +589,11 @@ function renderCircles() {
 
 function renderMatches() {
   const activity = selectedPost();
+  if (!activity || activity.type !== "Activity") {
+    $("#workspace").innerHTML = `<div class="view-stack">${hero("Activity buddy", "Choose an activity first", "Matching is available only for open activity posts.")}<section class="empty-state">${icon("users")}<h2>No activity selected</h2><p>Open an activity from Explore, then choose who you would like to go with.</p><button class="btn btn-dark" type="button" id="browseActivities">Browse activities ${icon("arrow")}</button></section></div>`;
+    $("#browseActivities").addEventListener("click", () => switchTab("explore"));
+    return;
+  }
   const joined = state.matchingJoined;
   const candidates = sharedDataAvailable ? liveMatches : matchCandidates;
   const actions = `<button class="btn btn-ghost-light" type="button" id="chooseActivity">${icon("back")} Choose another activity</button>`;
