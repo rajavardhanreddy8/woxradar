@@ -13,6 +13,10 @@ export async function requireCampusUser(request, requireSocial = true, requireCo
   if (userError || !user) return campusJson({ error: "Sign in to continue." }, { status: 401 });
   const email = collegeEmail(user.email);
   if (!email || !user.email_confirmed_at) return campusJson({ error: "Use a confirmed Woxsen account." }, { status: 403 });
+  const isReviewer = user.app_metadata?.role === "reviewer";
+  if (isReviewer && !["GET", "HEAD", "OPTIONS"].includes(request.method)) {
+    return campusJson({ error: "Reviewer access is read-only." }, { status: 403 });
+  }
   const { data: suspension, error } = await db.from("wox_suspensions").select("user_id").eq("user_id", user.id).maybeSingle();
   if (error) return campusJson({ error: "Campus access could not be checked. Retry." }, { status: 503 });
   if (suspension) return campusJson({ error: "Your campus access is paused. Contact the WoxRadar administrator." }, { status: 403 });
@@ -24,6 +28,6 @@ export async function requireCampusUser(request, requireSocial = true, requireCo
   if (requireSocial && (!Array.isArray(socialContacts) || !socialContacts.some(contact => typeof contact?.value === "string" && contact.value.trim()))) return campusJson({ error: "Add and save at least one social handle or profile link in My profile first.", needsProfile: true }, { status: 409 });
   const displayName = String(profile?.display_name || user.user_metadata?.full_name || email.split("@")[0] || "Campus member").trim().slice(0, 70);
   const initials = displayName.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "CM";
-  return { userId: user.id, email, displayName, initials, collegeEmail: email };
+  return { userId: user.id, email, displayName, initials, collegeEmail: email, isReviewer };
 }
 export function isModerator() { return false; }
