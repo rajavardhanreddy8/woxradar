@@ -2,7 +2,10 @@ const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 
 let viewer;
+let reviewerMode = false;
 
+const REVIEWER_EMAIL = "reviewer@woxradar.demo";
+const REVIEWER_PASSWORD = "ReviewWox!2026";
 const STORAGE_KEY = "woxradar-codedex-v2";
 
 const basePosts = [
@@ -202,6 +205,7 @@ async function authenticate(event) {
   const form = new FormData(event.currentTarget);
   const email = String(form.get("email") || "").trim().toLowerCase();
   const password = String(form.get("password") || "");
+  if (email === REVIEWER_EMAIL && password === REVIEWER_PASSWORD) return startReviewerPreview();
   if (!email.endsWith("@woxsen.edu.in")) return authMessage("Use your @woxsen.edu.in email address.");
   if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(password)) {
     return authMessage("Use 8+ characters with an uppercase letter, lowercase letter, and number.");
@@ -244,6 +248,32 @@ async function resendConfirmation() {
   } finally {
     button.disabled = false;
   }
+}
+
+function startReviewerPreview() {
+  reviewerMode = true;
+  sharedDataAvailable = false;
+  state = structuredClone(defaultState);
+  state.matchingJoined = true;
+  applyViewer({
+    displayName: "WoxRadar Reviewer",
+    school: "External evaluation",
+    course: "Product review",
+    year: "alumni",
+    email: REVIEWER_EMAIL,
+    initials: "WR",
+    collegeVerified: true,
+    profileCompleted: true,
+    discoveryEnabled: true,
+    onboardingStep: 4,
+    socialContacts: [],
+    preferences: { shareEntertainment: true, languageMatchingOptIn: false, answers: {} }
+  });
+  $("#authScreen").hidden = true;
+  $("#appShell").hidden = false;
+  updateChrome();
+  renderCurrent();
+  showToast("Reviewer preview is using sample data only.");
 }
 
 function applyViewer(profile) {
